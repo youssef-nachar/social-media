@@ -1,0 +1,68 @@
+{
+  "rules": {
+    ".read": "auth != null",
+    ".write": false,
+    "users": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'moderator')",
+        ".write": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+        "role": { ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'" },
+        "disabled": { ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'" }
+      }
+    },
+    "userHandles": {
+      "$handle": {
+        ".read": "auth != null",
+        ".write": "auth != null && (data.val() === auth.uid || !data.exists())"
+      }
+    },
+    "posts": {
+      ".indexOn": ["timestamp", "userId"],
+      "$postId": {
+        ".read": "auth != null",
+        ".write": "auth != null && (data.child('userId').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'moderator')",
+        "reactions": { "$uid": { ".write": "auth != null && $uid === auth.uid" } },
+        "saved": { "$uid": { ".write": "auth != null && $uid === auth.uid" } },
+        "comments": {
+          "$commentId": {
+            ".write": "auth != null && (newData.child('userId').val() === auth.uid || data.child('userId').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'moderator')"
+          }
+        }
+      }
+    },
+    "stories": {
+      ".indexOn": ["timestamp", "expiresAt"],
+      "$storyId": {
+        ".read": "auth != null",
+        ".write": "auth != null && (data.child('userId').val() === auth.uid || newData.child('userId').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')"
+      }
+    },
+    "notifications": {
+      "$uid": {
+        ".read": "auth != null && $uid === auth.uid",
+        "$id": { ".write": "auth != null && ($uid === auth.uid || !data.exists())" }
+      }
+    },
+    "chats": {
+      "$chatId": {
+        ".read": "auth != null && data.child('members').child(auth.uid).exists()",
+        ".write": "auth != null && (data.child('members').child(auth.uid).exists() || newData.child('members').child(auth.uid).exists())",
+        "members": { "$uid": { ".write": "auth != null && ($uid === auth.uid || data.parent().child(auth.uid).exists())" } }
+      }
+    },
+    "messages": {
+      "$chatId": {
+        ".indexOn": ["timestamp"],
+        ".read": "auth != null && root.child('chats').child($chatId).child('members').child(auth.uid).exists()",
+        "$messageId": {
+          ".write": "auth != null && (newData.child('senderId').val() === auth.uid || root.child('chats').child($chatId).child('members').child(auth.uid).exists() && data.child('senderId').val() === auth.uid)"
+        }
+      }
+    },
+    "typing": {
+      "$sender": {
+        "$receiver": { ".write": "auth != null && $sender === auth.uid && root.child('users').child($receiver).exists()" }
+      }
+    }
+  }
+}

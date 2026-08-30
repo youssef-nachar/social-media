@@ -1,0 +1,2266 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <meta name="theme-color" content="#0b0d14">
+  <title>HABER Neo-Next Pro v6 Production</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+    :root {
+      --bg: #0b0d14;
+      --card: rgba(20, 24, 36, .78);
+      --card2: rgba(255, 255, 255, .035);
+      --text: #f1f5f9;
+      --sub: #94a3b8;
+      --p: #6366f1;
+      --ph: #4f46e5;
+      --pink: #ec4899;
+      --cyan: #06b6d4;
+      --green: #10b981;
+      --red: #ef4444;
+      --border: rgba(255, 255, 255, .08);
+      --shadow: 0 12px 32px rgba(0, 0, 0, .35);
+      --glow: 0 0 22px rgba(99, 102, 241, .25);
+      --radius: 20px
+    }
+
+    body.light {
+      --bg: #f5f7fb;
+      --card: rgba(255, 255, 255, .86);
+      --card2: rgba(15, 23, 42, .035);
+      --text: #111827;
+      --sub: #64748b;
+      --border: rgba(15, 23, 42, .1);
+      --shadow: 0 12px 32px rgba(15, 23, 42, .1)
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
+      background-image: radial-gradient(circle at 10% 10%, rgba(99, 102, 241, .1), transparent 35%), radial-gradient(circle at 90% 90%, rgba(236, 72, 153, .07), transparent 35%)
+    }
+
+    button,
+    input,
+    textarea,
+    select {
+      font: inherit
+    }
+
+    button {
+      cursor: pointer
+    }
+
+    .hidden {
+      display: none !important
+    }
+
+    .muted {
+      color: var(--sub)
+    }
+
+    .small {
+      font-size: 12px
+    }
+
+    .tiny {
+      font-size: 11px
+    }
+
+    .logo {
+      font-size: 28px;
+      font-weight: 800;
+      text-decoration: none;
+      background: linear-gradient(135deg, var(--p), var(--pink));
+      -webkit-background-clip: text;
+      color: transparent
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 12px;
+      padding: 9px 16px;
+      font-weight: 700;
+      font-size: 13px
+    }
+
+    .primary {
+      background: linear-gradient(135deg, var(--p), var(--ph));
+      color: #fff;
+      box-shadow: var(--glow)
+    }
+
+    .secondary {
+      background: var(--card2);
+      border: 1px solid var(--border);
+      color: var(--text)
+    }
+
+    .danger {
+      background: linear-gradient(135deg, #ef4444, #991b1b);
+      color: #fff
+    }
+
+    .btn:disabled {
+      opacity: .5;
+      cursor: not-allowed
+    }
+
+    .auth {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: var(--bg);
+      z-index: 10000
+    }
+
+    .auth-card,
+    .card {
+      background: var(--card);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow)
+    }
+
+    .auth-card {
+      width: min(420px, 100%);
+      padding: 34px;
+      text-align: center
+    }
+
+    .auth-card h2 {
+      margin: 12px 0 6px
+    }
+
+    .auth-form {
+      display: grid;
+      gap: 12px;
+      margin-top: 22px
+    }
+
+    .input,
+    .textarea,
+    .select {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      background: var(--card2);
+      color: var(--text);
+      border-radius: 13px;
+      outline: 0
+    }
+
+    .input:focus,
+    .textarea:focus,
+    .select:focus {
+      border-color: var(--p);
+      box-shadow: 0 0 12px rgba(99, 102, 241, .2)
+    }
+
+    .auth-switch {
+      margin-top: 16px;
+      font-size: 12px;
+      color: var(--sub)
+    }
+
+    .auth-switch span {
+      color: var(--cyan);
+      font-weight: 800;
+      cursor: pointer
+    }
+
+    #app {
+      height: 100%;
+      display: flex;
+      flex-direction: column
+    }
+
+    .header {
+      height: 70px;
+      flex-shrink: 0;
+      border-bottom: 1px solid var(--border);
+      background: var(--card);
+      backdrop-filter: blur(20px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 22px;
+      z-index: 100
+    }
+
+    .header-left,
+    .header-right,
+    .header-nav,
+    .profile-mini {
+      display: flex;
+      align-items: center;
+      gap: 10px
+    }
+
+    .header-nav {
+      background: rgba(0, 0, 0, .18);
+      padding: 5px;
+      border: 1px solid var(--border);
+      border-radius: 50px
+    }
+
+    .nav {
+      padding: 8px 14px;
+      border-radius: 40px;
+      color: var(--sub);
+      font-size: 12px;
+      font-weight: 700;
+      background: transparent;
+      border: 0;
+    }
+
+    .nav.active,
+    .nav:hover {
+      background: var(--p);
+      color: #fff
+    }
+
+    .search {
+      width: 190px;
+      background: var(--card2);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      padding: 9px 14px;
+      color: var(--text);
+      outline: 0
+    }
+
+    .icon {
+      width: 40px;
+      height: 40px;
+      border: 1px solid var(--border);
+      background: var(--card2);
+      color: var(--text);
+      border-radius: 13px;
+      position: relative;
+    }
+
+    .profile-mini {
+      padding: 4px 9px;
+      border: 1px solid var(--border);
+      background: var(--card2);
+      border-radius: 50px;
+      cursor: pointer
+    }
+
+    .avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 15px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, var(--p), var(--pink));
+      color: #fff;
+      font-weight: 800;
+      flex-shrink: 0;
+      overflow: hidden
+    }
+
+    .avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover
+    }
+
+    .avatar.sm {
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      font-size: 13px
+    }
+
+    .avatar.lg {
+      width: 76px;
+      height: 76px;
+      border-radius: 23px;
+      font-size: 28px
+    }
+
+    .layout {
+      flex: 1;
+      display: flex;
+      gap: 18px;
+      max-width: 1420px;
+      width: 100%;
+      margin: auto;
+      padding: 16px;
+      overflow: hidden
+    }
+
+    .left {
+      width: 260px;
+      flex-shrink: 0;
+      overflow: auto
+    }
+
+    .right {
+      width: 240px;
+      flex-shrink: 0;
+      overflow: auto
+    }
+
+    .feed {
+      flex: 1;
+      max-width: 700px;
+      min-width: 0;
+      overflow: auto;
+      scrollbar-width: none
+    }
+
+    .feed::-webkit-scrollbar {
+      display: none
+    }
+
+    .card {
+      padding: 18px;
+      margin-bottom: 14px
+    }
+
+    .profile-card {
+      text-align: center
+    }
+
+    .stats {
+      display: flex;
+      justify-content: space-around;
+      border-top: 1px solid var(--border);
+      margin-top: 15px;
+      padding-top: 13px
+    }
+
+    .stat b {
+      display: block;
+      color: var(--cyan)
+    }
+
+    .stat span {
+      font-size: 10px;
+      color: var(--sub)
+    }
+
+    .view {
+      display: none
+    }
+
+    .view.active {
+      display: block
+    }
+
+    .stories {
+      display: flex;
+      gap: 10px;
+      overflow: auto;
+      margin-bottom: 15px;
+      scrollbar-width: none
+    }
+
+    .story {
+      min-width: 94px;
+      width: 94px;
+      height: 145px;
+      border-radius: 18px;
+      background-size: cover;
+      background-position: center;
+      border: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      padding: 10px;
+      display: flex;
+      align-items: flex-end
+    }
+
+    .story:after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(transparent, rgba(0, 0, 0, .85))
+    }
+
+    .story span {
+      position: relative;
+      z-index: 1;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 800
+    }
+
+    .story.add {
+      align-items: center;
+      justify-content: center;
+      background: var(--card2);
+      border: 2px dashed var(--p);
+      text-align: center
+    }
+
+    .composer {
+      display: grid;
+      gap: 10px
+    }
+
+    .post-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center
+    }
+
+    .post-user {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer
+    }
+
+    .post-content {
+      white-space: pre-wrap;
+      word-break: break-word;
+      line-height: 1.55;
+      font-size: 14px;
+      margin-top: 9px
+    }
+
+    .media {
+      margin-top: 12px;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      position: relative
+    }
+
+    .media img,
+    .media video {
+      width: 100%;
+      max-height: 460px;
+      display: block;
+      object-fit: cover
+    }
+
+    .post-stats {
+      display: flex;
+      justify-content: space-between;
+      color: var(--sub);
+      font-size: 11px;
+      border-bottom: 1px solid var(--border);
+      padding: 10px 0
+    }
+
+    .actions {
+      display: flex;
+      gap: 4px;
+      margin-top: 5px
+    }
+
+    .action {
+      flex: 1;
+      border: 0;
+      background: transparent;
+      color: var(--sub);
+      padding: 9px 4px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 700
+    }
+
+    .action:hover,
+    .action.on {
+      background: var(--card2);
+      color: var(--cyan)
+    }
+
+    .chat {
+      height: calc(100dvh - 112px);
+      min-height: 420px;
+      display: flex;
+      overflow: hidden
+    }
+
+    .chat-list {
+      width: 290px;
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      background: rgba(0, 0, 0, .08)
+    }
+
+    .chat-list-head {
+      padding: 14px;
+      border-bottom: 1px solid var(--border)
+    }
+
+    .chat-users {
+      overflow: auto;
+      flex: 1
+    }
+
+    .chat-user {
+      display: flex;
+      gap: 10px;
+      padding: 11px 13px;
+      cursor: pointer;
+      border-bottom: 1px solid rgba(255, 255, 255, .025)
+    }
+
+    .chat-user:hover,
+    .chat-user.active {
+      background: rgba(99, 102, 241, .13)
+    }
+
+    .chat-info {
+      min-width: 0;
+      flex: 1
+    }
+
+    .chat-name {
+      font-size: 12px;
+      font-weight: 800
+    }
+
+    .chat-preview {
+      font-size: 10px;
+      color: var(--sub);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis
+    }
+
+    .chat-room {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column
+    }
+
+    .chat-head {
+      height: 60px;
+      flex-shrink: 0;
+      padding: 0 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px
+    }
+
+    .messages {
+      flex: 1;
+      overflow: auto;
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px
+    }
+
+    .bubble-row {
+      display: flex;
+      flex-direction: column
+    }
+
+    .bubble-row.me {
+      align-items: flex-end
+    }
+
+    .bubble {
+      max-width: 76%;
+      padding: 9px 13px;
+      border-radius: 17px;
+      line-height: 1.45;
+      font-size: 12px;
+      word-break: break-word
+    }
+
+    .bubble.me {
+      background: linear-gradient(135deg, var(--p), var(--pink));
+      color: #fff;
+      border-bottom-right-radius: 4px
+    }
+
+    .bubble.other {
+      background: var(--card2);
+      border: 1px solid var(--border);
+      border-bottom-left-radius: 4px
+    }
+
+    .msg-time {
+      font-size: 9px;
+      color: var(--sub);
+      margin-top: 3px
+    }
+
+    .chat-input {
+      display: flex;
+      gap: 8px;
+      padding: 11px;
+      border-top: 1px solid var(--border)
+    }
+
+    .people {
+      display: grid;
+      gap: 10px
+    }
+
+    .person {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px
+    }
+
+    .person-main {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      cursor: pointer
+    }
+
+    .tabs {
+      display: flex;
+      gap: 7px;
+      margin-bottom: 14px;
+      overflow: auto
+    }
+
+    .tab {
+      padding: 8px 13px;
+      border: 1px solid var(--border);
+      background: var(--card2);
+      color: var(--sub);
+      border-radius: 11px;
+      font-size: 11px;
+      font-weight: 800;
+      white-space: nowrap
+    }
+
+    .tab.active {
+      background: var(--p);
+      color: #fff;
+      border-color: var(--p)
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .72);
+      backdrop-filter: blur(9px);
+      display: none;
+      place-items: center;
+      z-index: 5000;
+      padding: 15px
+    }
+
+    .modal.show {
+      display: grid
+    }
+
+    .modal-box {
+      width: min(560px, 100%);
+      max-height: 90dvh;
+      overflow: auto;
+      padding: 22px;
+      position: relative
+    }
+
+    .close {
+      position: absolute;
+      right: 16px;
+      top: 12px;
+      border: 0;
+      background: none;
+      color: var(--sub);
+      font-size: 24px
+    }
+
+    .comment-list {
+      display: grid;
+      gap: 10px;
+      max-height: 55dvh;
+      overflow: auto;
+      margin: 12px 0
+    }
+
+    .comment {
+      display: flex;
+      gap: 9px;
+      background: var(--card2);
+      border: 1px solid var(--border);
+      padding: 10px;
+      border-radius: 13px
+    }
+
+    .comment-body {
+      flex: 1
+    }
+
+    .comment-actions {
+      font-size: 10px;
+      color: var(--sub);
+      margin-top: 5px;
+      cursor: pointer
+    }
+
+    .dropdown {
+      position: absolute;
+      right: 15px;
+      top: 58px;
+      width: 310px;
+      max-height: 380px;
+      overflow: auto;
+      background: var(--card);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      border-radius: 17px;
+      padding: 13px;
+      display: none;
+      z-index: 300
+    }
+
+    .dropdown.show {
+      display: block
+    }
+
+    .notif {
+      padding: 9px;
+      border: 1px solid var(--border);
+      background: var(--card2);
+      border-radius: 11px;
+      margin-bottom: 7px;
+      font-size: 11px
+    }
+
+    #firebaseStatus {
+      padding: 6px 9px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--card2)
+    }
+
+    .toast-box {
+      position: fixed;
+      right: 18px;
+      top: 82px;
+      z-index: 9000;
+      display: grid;
+      gap: 8px
+    }
+
+    .toast {
+      padding: 11px 15px;
+      background: var(--card);
+      border: 1px solid var(--p);
+      border-radius: 13px;
+      box-shadow: var(--shadow);
+      font-size: 12px;
+      font-weight: 700
+    }
+
+    .mobile-nav {
+      display: none
+    }
+
+    .empty {
+      text-align: center;
+      padding: 25px;
+      color: var(--sub);
+      font-size: 12px
+    }
+
+    .tag {
+      color: var(--cyan);
+      font-weight: 800;
+      cursor: pointer
+    }
+
+    .heart {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      font-size: 80px;
+      opacity: 0;
+      transform: scale(.4);
+      pointer-events: none
+    }
+
+    .heart.show {
+      animation: heart .75s ease
+    }
+
+    .preview {
+      font-size: 11px;
+      color: var(--pink);
+      font-weight: 800
+    }
+
+    @keyframes heart {
+      0% {
+        opacity: 0;
+        transform: scale(.4)
+      }
+
+      35% {
+        opacity: 1;
+        transform: scale(1.15)
+      }
+
+      100% {
+        opacity: 0;
+        transform: scale(1)
+      }
+    }
+
+    @media(max-width:1100px) {
+      .right {
+        display: none
+      }
+    }
+
+    @media(max-width:850px) {
+
+      .left,
+      .header-nav {
+        display: none
+      }
+
+      .mobile-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 64px;
+        display: flex;
+        background: var(--card);
+        backdrop-filter: blur(20px);
+        border-top: 1px solid var(--border);
+        z-index: 200
+      }
+
+      .mobile-nav button {
+        flex: 1;
+        border: 0;
+        background: none;
+        color: var(--sub);
+        font-size: 10px;
+        font-weight: 800
+      }
+
+      .mobile-nav button.active {
+        color: var(--cyan)
+      }
+
+      .mobile-nav i {
+        display: block;
+        font-style: normal;
+        font-size: 20px;
+        margin-bottom: 2px
+      }
+
+      .layout {
+        padding: 10px 10px 74px
+      }
+
+      .header {
+        height: 62px;
+        padding: 0 10px
+      }
+
+      .search {
+        width: 105px
+      }
+
+      .logo {
+        font-size: 22px
+      }
+
+      .chat {
+        height: calc(100dvh - 136px);
+        border-radius: 15px
+      }
+
+      .chat-list {
+        width: 100%;
+        border: 0
+      }
+
+      .chat-room {
+        display: none
+      }
+
+      .chat.mobile-room .chat-list {
+        display: none
+      }
+
+      .chat.mobile-room .chat-room {
+        display: flex
+      }
+
+      .chat-back {
+        display: inline-block !important
+      }
+
+      .actions .action span {
+        display: none
+      }
+    }
+
+    @media(min-width:851px) {
+      .chat-back {
+        display: none !important
+      }
+    }
+
+    @media(max-width:480px) {
+      .profile-mini .name {
+        display: none
+      }
+
+      .card {
+        padding: 14px
+      }
+
+      .search {
+        width: 90px
+      }
+
+      .bubble {
+        max-width: 85%
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="login" class="auth">
+    <div class="auth-card">
+      <div class="logo">HABER</div>
+      <h2>Welcome to the Future 🚀</h2>
+      <p class="small muted">Sign in to your HABER network</p>
+      <form id="loginForm" class="auth-form">
+        <input id="loginUser" class="input" placeholder="Email address" required>
+        <input id="loginPass" class="input" type="password" placeholder="Password" required>
+        <button class="btn primary" type="submit">Log In</button>
+      </form>
+      <div class="auth-switch">Don't have an account? <span id="showSignup">Create account</span></div>
+    </div>
+  </div>
+
+  <div id="signup" class="auth hidden">
+    <div class="auth-card">
+      <div class="logo">HABER</div>
+      <h2>Create Account ⚡</h2>
+      <p class="small muted">Join the next-gen network</p>
+      <form id="signupForm" class="auth-form">
+        <input id="signupName" class="input" placeholder="Full name" maxlength="60" required>
+        <input id="signupEmail" class="input" type="email" placeholder="Email address" autocomplete="email" required>
+        <input id="signupHandle" class="input" placeholder="Username, e.g. alex_m" required>
+        <input id="signupPass" class="input" type="password" minlength="8" placeholder="Password (8+ characters)"
+          autocomplete="new-password" required>
+        <button class="btn primary" type="submit">Create Account</button>
+      </form>
+      <div class="auth-switch">Already have an account? <span id="showLogin">Log in</span></div>
+    </div>
+  </div>
+
+  <div id="app" class="hidden">
+    <header class="header">
+      <div class="header-left">
+        <a class="logo" href="#" id="homeBtn">haber</a>
+        <input id="globalSearch" class="search" placeholder="Search..." autocomplete="off">
+      </div>
+      <nav class="header-nav">
+        <button class="nav active" data-tab="feed">⚡ Feed</button>
+        <button class="nav" data-tab="messages">💬 Messenger</button>
+        <button class="nav" data-tab="saved">🔖 Saved</button>
+        <button class="nav" data-tab="users">🌐 People</button>
+        <button class="nav" data-tab="profile">👤 Profile</button>
+        <button id="adminNav" class="nav hidden" data-tab="admin">🛡️ Admin</button>
+      </nav>
+      <div class="header-right"><span id="firebaseStatus" class="tiny muted" title="Firebase connection status">●
+          Firebase</span>
+        <div id="profileMini" class="profile-mini">
+          <div class="avatar sm" id="headerAvatar">H</div><span class="name" id="headerName">User</span>
+        </div>
+        <button class="icon" id="notifBtn">🔔<span id="notifCount"
+            style="position:absolute;margin:-27px 0 0 20px;background:var(--pink);color:white;border-radius:50%;padding:2px 5px;font-size:9px;display:none">0</span></button>
+        <button class="icon" id="themeBtn">🌙</button>
+        <div id="notifMenu" class="dropdown"><b>Notifications</b><button id="clearNotifs" class="btn secondary"
+            style="float:right;padding:4px 8px;font-size:10px">Clear</button>
+          <div id="notifList" style="clear:both;margin-top:12px"></div>
+        </div>
+      </div>
+    </header>
+
+    <div class="layout">
+      <aside class="left">
+        <div class="card profile-card">
+          <div class="avatar lg" id="sideAvatar" style="margin:auto">H</div>
+          <h3 id="sideName" style="margin-top:10px">User</h3>
+          <p id="sideHandle" class="small muted">@user</p>
+          <div class="stats">
+            <div class="stat"><b id="sidePosts">0</b><span>Posts</span></div>
+            <div class="stat"><b id="sideFollowers">0</b><span>Followers</span></div>
+            <div class="stat"><b id="sideFollowing">0</b><span>Following</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <b class="small muted">SHORTCUTS</b>
+          <div style="display:grid;gap:12px;margin-top:13px;font-size:12px;cursor:pointer">
+            <span data-tab-link="feed">⚡ Interactive Feed</span>
+            <span data-tab-link="messages">💬 Messenger</span>
+            <span data-tab-link="saved">🔖 Saved Posts</span>
+            <span data-tab-link="users">🌐 Community</span>
+            <span data-tab-link="profile">⚙️ Settings</span>
+            <span id="adminShortcut" class="hidden" data-tab-link="admin">🛡️ Admin Dashboard</span>
+          </div>
+        </div>
+      </aside>
+
+      <main class="feed">
+        <section id="feed" class="view active">
+          <div id="stories" class="stories"></div>
+          <div class="card composer">
+            <textarea id="postText" class="textarea" rows="3" placeholder="What's on your mind?"></textarea>
+            <input id="postLocation" class="input" placeholder="📍 Location (optional)">
+            <input id="postFile" type="file" accept="image/*,video/*" class="hidden">
+            <div
+              style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);padding-top:11px">
+              <button id="mediaBtn" class="btn secondary">🖼️ Photo / Video</button>
+              <button id="publishBtn" class="btn primary">Post Now</button>
+            </div>
+            <div id="mediaPreview" class="preview"></div>
+          </div>
+          <div id="posts"></div>
+        </section>
+
+        <section id="saved" class="view">
+          <h3 style="margin:5px 0 14px">Saved Bookmarks 🔖</h3>
+          <div id="savedPosts"></div>
+        </section>
+
+        <section id="admin" class="view">
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;gap:10px;align-items:center">
+              <div>
+                <h2>Admin Dashboard 🛡️</h2>
+                <p class="small muted">Moderation, users, roles, security and platform health</p>
+              </div><span id="adminRoleBadge" class="tag">ADMIN</span>
+            </div>
+          </div>
+          <div id="adminContent"></div>
+        </section>
+
+        <section id="profile" class="view">
+          <div class="card profile-card">
+            <div class="avatar lg" id="profileAvatar" style="margin:auto">H</div>
+            <h2 id="profileName" style="margin-top:10px">User</h2>
+            <p id="profileHandle" class="muted small">@user</p>
+            <div class="stats">
+              <div class="stat"><b id="profilePosts">0</b><span>Posts</span></div>
+              <div class="stat"><b id="profileFollowers">0</b><span>Followers</span></div>
+              <div class="stat"><b id="profileFollowing">0</b><span>Following</span></div>
+            </div>
+          </div>
+          <div class="card">
+            <h3 style="font-size:15px">Account Settings ⚙️</h3>
+            <div style="display:grid;gap:10px;margin-top:13px">
+              <label class="person"><span>Dark Mode</span><input id="darkToggle" type="checkbox"></label>
+              <button id="editProfileBtn" class="btn secondary">Edit Profile</button>
+              <button id="logoutBtn" class="btn danger">Log Out 🚪</button>
+            </div>
+          </div>
+          <div class="card">
+            <h3 style="font-size:15px;margin-bottom:10px">My Posts 📝</h3>
+            <div id="myPosts"></div>
+          </div>
+        </section>
+
+        <section id="users" class="view">
+          <div class="card">
+            <h3>Community Directory</h3>
+            <p class="small muted" style="margin-top:3px">Discover and connect with members</p>
+          </div>
+          <div class="tabs">
+            <button class="tab active" data-user-tab="discover">Discover</button>
+            <button class="tab" data-user-tab="followers">Followers</button>
+            <button class="tab" data-user-tab="following">Following</button>
+          </div>
+          <div id="people" class="people"></div>
+        </section>
+
+        <section id="messages" class="view">
+          <div id="chat" class="card chat">
+            <div class="chat-list">
+              <div class="chat-list-head">
+                <h3 style="font-size:15px">Chats</h3>
+                <input id="chatSearch" class="input" style="margin-top:8px;padding:9px" placeholder="Search people...">
+              </div>
+              <div id="chatUsers" class="chat-users"></div>
+            </div>
+            <div class="chat-room">
+              <div class="chat-head">
+                <button id="chatBack" class="btn secondary chat-back">←</button>
+                <div class="avatar sm" id="chatAvatar">?</div>
+                <div>
+                  <b id="chatName" style="font-size:13px">Select a conversation</b>
+                  <div id="chatStatus" class="tiny muted">Offline</div>
+                </div>
+              </div>
+              <div id="messagesList" class="messages">
+                <div class="empty">Select a user to start chatting 💬</div>
+              </div>
+              <div class="chat-input">
+                <input id="chatInput" class="input" placeholder="Type a message..." autocomplete="off">
+                <button id="sendBtn" class="btn primary">Send</button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <aside class="right">
+        <div class="card"><b class="small muted">TRENDING 🔥</b>
+          <div id="trending" style="display:grid;gap:12px;margin-top:14px"></div>
+        </div>
+        <div class="card"><b class="small muted">NETWORK</b>
+          <div id="networkSummary" class="small muted" style="margin-top:12px;line-height:1.7"></div>
+        </div>
+      </aside>
+    </div>
+
+    <div class="mobile-nav">
+      <button class="active" data-tab="feed"><i>⚡</i>Feed</button>
+      <button data-tab="messages"><i>💬</i>Chats</button>
+      <button data-tab="users"><i>🌐</i>People</button>
+      <button data-tab="saved"><i>🔖</i>Saved</button>
+      <button data-tab="profile"><i>👤</i>Profile</button>
+    </div>
+  </div>
+
+  <div id="toastBox" class="toast-box"></div>
+
+  <div id="modal" class="modal">
+    <div id="modalBox" class="modal-box card">
+      <button class="close" id="modalClose">×</button>
+      <div id="modalContent"></div>
+    </div>
+  </div>
+
+  <div id="commentsModal" class="modal">
+    <div class="modal-box card">
+      <button class="close" id="commentsClose">×</button>
+      <h3 id="commentsTitle">Comments</h3>
+      <div id="commentsList" class="comment-list"></div>
+      <div style="display:flex;gap:8px">
+        <input id="commentInput" class="input" placeholder="Write a comment...">
+        <button id="commentSend" class="btn primary">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile as updateAuthProfile } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+    import { getDatabase, ref, set, get, push, update, remove, onValue, query, orderByChild, limitToLast, endAt } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
+    import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-storage.js";
+
+    // 1. Firebase Configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyDYKYertwdu_g0dRYBFigwbH8SbJM9VwLE",
+      authDomain: "social-media-9fb3f.firebaseapp.com",
+      projectId: "social-media-9fb3f",
+      storageBucket: "social-media-9fb3f.firebasestorage.app",
+      messagingSenderId: "323467276507",
+      appId: "1:323467276507:web:03ec2e15c2846574919cfe",
+      measurementId: "G-WK3Q4SXPTX"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+    const storage = getStorage(app);
+
+    // 2. State
+    const state = {
+      uid: null,
+      authUser: null,
+      users: {},
+      posts: {},
+      stories: {},
+      notifs: {},
+      messages: {},
+      typing: {},
+      tab: "feed",
+      userTab: "discover",
+      chatUid: null,
+      commentPost: null,
+      mediaFile: null,
+      uploading: false,
+      unsub: [],
+      chatUnsub: [],
+      postCursor: null,
+      postLoading: false,
+      postPageSize: 30,
+      messageCursor: null,
+      messageLoading: false,
+      messagePageSize: 50,
+      dark: localStorage.getItem("haber_theme") !== "light"
+    };
+
+    // 3. Utilities
+    const $ = id => document.getElementById(id);
+    const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[c]));
+    const first = v => String(v || "U").trim().charAt(0).toUpperCase() || "U";
+    const uidKey = (a, b) => a < b ? `${a}_${b}` : `${b}_${a}`;
+    const fmtTime = ts => {
+      if (!ts) return "";
+      const d = new Date(ts), n = new Date();
+      if (d.toDateString() === n.toDateString()) return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      return d.toLocaleDateString();
+    };
+    const current = () => state.uid ? state.users[state.uid] : null;
+
+    function toast(msg) {
+      const box = $('toastBox');
+      if (!box) return alert(msg);
+      const x = document.createElement("div");
+      x.className = "toast";
+      x.textContent = msg;
+      box.appendChild(x);
+      setTimeout(() => x.remove(), 3200);
+    }
+
+    function show(id) { $(id)?.classList.remove("hidden"); }
+    function hide(id) { $(id)?.classList.add("hidden"); }
+    function closeModal(id = "modal") { $(id)?.classList.remove("show"); }
+    function openModal(html) {
+      if ($("modalContent")) $("modalContent").innerHTML = html;
+      $("modal")?.classList.add("show");
+    }
+
+    function avatarHTML(u, cls = "") {
+      if (!u) return `<div class="avatar ${cls}">U</div>`;
+      return `<div class="avatar ${cls}">${u.avatar ? `<img src="${esc(u.avatar)}" alt="">` : esc(first(u.name))}</div>`;
+    }
+
+    function normalizeUser(u, id) {
+      return {
+        ...u,
+        id: u?.id || id,
+        name: u?.name || "User",
+        handle: u?.handle || "@user",
+        email: u?.email || "",
+        role: u?.role || "user",
+        disabled: !!u?.disabled,
+        followers: u?.followers || {},
+        following: u?.following || {},
+        online: !!u?.online,
+        lastSeen: u?.lastSeen || 0
+      };
+    }
+
+    function isAdmin() { return ["admin", "superadmin"].includes(current()?.role); }
+    function isMod() { return isAdmin() || current()?.role === "moderator"; }
+
+    function setTheme() {
+      document.body.classList.toggle("light", !state.dark);
+      if ($("themeBtn")) $("themeBtn").textContent = state.dark ? "🌙" : "☀️";
+      if ($("darkToggle")) $("darkToggle").checked = state.dark;
+      localStorage.setItem("haber_theme", state.dark ? "dark" : "light");
+    }
+
+    function nav(tab) {
+      if (tab === "admin" && !isAdmin()) { toast("Admin access required"); return; }
+      state.tab = tab;
+      document.querySelectorAll(".view").forEach(x => x.classList.toggle("active", x.id === tab));
+      document.querySelectorAll(".nav, .mobile-nav button").forEach(x => x.classList.toggle("active", x.dataset.tab === tab));
+      if (tab === "saved") renderSaved();
+      if (tab === "profile") renderProfile();
+      if (tab === "users") renderPeople();
+      if (tab === "messages") renderChatUsers();
+      if (tab === "admin") renderAdmin();
+    }
+
+    function updateRoleUI() {
+      const a = isAdmin();
+      $("adminNav")?.classList.toggle("hidden", !a);
+      $("adminShortcut")?.classList.toggle("hidden", !a);
+    }
+
+    function friendlyAuthError(e) {
+      const m = {
+        "auth/invalid-credential": "Invalid email or password",
+        "auth/email-already-in-use": "Email is already registered",
+        "auth/weak-password": "Password is too weak",
+        "auth/invalid-email": "Invalid email address",
+        "auth/user-disabled": "This account is disabled",
+        "auth/too-many-requests": "Too many attempts. Try again later"
+      };
+      return m[e?.code] || e?.message || "Authentication failed";
+    }
+
+    // 4. Authentication & Core
+    async function ensureProfile(fbUser, extra = {}) {
+      const snap = await get(ref(db, `users/${fbUser.uid}`));
+      const existing = snap.val() || {};
+      const profile = normalizeUser({
+        ...existing,
+        ...extra,
+        id: fbUser.uid,
+        email: fbUser.email || existing.email || "",
+        name: extra.name || existing.name || fbUser.displayName || "User",
+        handle: extra.handle || existing.handle || ("@" + String(fbUser.email || fbUser.uid).split("@")[0].replace(/[^a-z0-9_]/gi, "")),
+        role: existing.role || "user",
+        disabled: !!existing.disabled
+      });
+      if (!snap.exists()) {
+        await set(ref(db, `users/${fbUser.uid}`), { ...profile, followers: {}, following: {}, createdAt: Date.now() });
+      }
+      return profile;
+    }
+
+    async function login(e) {
+      if (e) e.preventDefault();
+      const email = $("loginUser").value.trim(), pass = $("loginPass").value;
+      if (!email || !pass) return toast("Please fill in all fields");
+      try {
+        await signInWithEmailAndPassword(auth, email, pass);
+      } catch (err) {
+        toast(friendlyAuthError(err));
+      }
+    }
+
+    async function signup(e) {
+      if (e) e.preventDefault();
+      const name = $("signupName").value.trim();
+      const email = $("signupEmail").value.trim().toLowerCase();
+      const pass = $("signupPass").value;
+      let rawHandle = $("signupHandle").value.trim().toLowerCase().replace(/^@/, '');
+      const handle = "@" + rawHandle;
+
+      if (!name || !email || !/^^[a-z0-9_]{3,30}$/.test(rawHandle) || pass.length < 8) {
+        return toast("Enter valid details. Username must be 3-30 valid chars and password 8+ chars.");
+      }
+
+      try {
+        const exists = await get(ref(db, "userHandles/" + rawHandle));
+        if (exists.exists()) return toast("Username is already taken");
+
+        const cred = await createUserWithEmailAndPassword(auth, email, pass);
+        await updateAuthProfile(cred.user, { displayName: name });
+        await set(ref(db, `userHandles/${rawHandle}`), cred.user.uid);
+        await set(ref(db, `users/${cred.user.uid}`), {
+          id: cred.user.uid,
+          name,
+          handle,
+          email,
+          role: "user",
+          disabled: false,
+          followers: {},
+          following: {},
+          createdAt: Date.now(),
+          online: true,
+          lastSeen: Date.now()
+        });
+        toast("Account created successfully 🚀");
+      } catch (err) {
+        console.error("Signup error details:", err);
+        toast(friendlyAuthError(err));
+      }
+    }
+    async function logout() {
+      try {
+        if (state.uid) await update(ref(db, `users/${state.uid}`), { online: false, lastSeen: Date.now() });
+        await signOut(auth);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        cleanupListeners();
+        state.uid = null;
+        state.authUser = null;
+        hide("app");
+        show("login");
+        $("loginForm")?.reset();
+        toast("Logged out");
+      }
+    }
+
+    function cleanupListeners() {
+      state.unsub.forEach(f => { try { f(); } catch { } });
+      state.unsub = [];
+      state.chatUnsub.forEach(f => { try { f(); } catch { } });
+      state.chatUnsub = [];
+    }
+
+    function listenCore() {
+      cleanupListeners();
+      const usersQ = query(ref(db, "users"));
+      state.unsub.push(onValue(usersQ, s => {
+        const d = s.val() || {};
+        state.users = Object.fromEntries(Object.entries(d).map(([id, u]) => [id, normalizeUser(u, id)]));
+        const me = current();
+        if (me?.disabled) {
+          toast("Your account has been disabled.");
+          logout();
+          return;
+        }
+        updateRoleUI();
+        renderAll();
+      }));
+
+      const storiesQ = query(ref(db, "stories"), orderByChild("timestamp"), limitToLast(60));
+      state.unsub.push(onValue(storiesQ, s => {
+        state.stories = s.val() || {};
+        renderStories();
+      }));
+
+      state.unsub.push(onValue(ref(db, `notifications/${state.uid}`), s => {
+        state.notifs = s.val() || {};
+        renderNotifications();
+      }));
+
+      state.unsub.push(onValue(ref(db, `typing/${state.uid}`), s => {
+        state.typing = s.val() || {};
+        updateChatStatus();
+        renderChatUsers();
+      }));
+
+      watchConnection();
+      loadFirstPosts();
+    }
+
+    function watchConnection() {
+      const connectedRef = ref(db, ".info/connected");
+      state.unsub.push(onValue(connectedRef, s => {
+        const ok = s.val() === true, el = $("firebaseStatus");
+        if (el) {
+          el.textContent = ok ? "● Firebase Online" : "● Firebase Offline";
+          el.style.color = ok ? "var(--green)" : "var(--red)";
+        }
+      }));
+    }
+
+    async function bootApp(fbUser) {
+      state.authUser = fbUser;
+      state.uid = fbUser.uid;
+      try {
+        const p = await ensureProfile(fbUser);
+        if (p.disabled) {
+          toast("Account disabled");
+          return await logout();
+        }
+        await update(ref(db, `users/${state.uid}`), { online: true, lastSeen: Date.now() });
+        hide("login");
+        hide("signup");
+        show("app");
+        setTheme();
+        listenCore();
+        nav(state.tab || "feed");
+        toast(`Welcome, ${p.name}! ⚡`);
+      } catch (e) {
+        console.error(e);
+        toast("Could not load profile");
+      }
+    }
+
+    onAuthStateChanged(auth, async fbUser => {
+      if (fbUser) await bootApp(fbUser);
+      else {
+        cleanupListeners();
+        state.uid = null;
+        state.authUser = null;
+        hide("app");
+        show("login");
+      }
+    });
+
+    // 5. Render Functions
+    function renderAll() {
+      if (!state.uid) return;
+      renderHeader();
+      renderStories();
+      renderPosts();
+      renderProfile();
+      renderPeople();
+      renderSaved();
+      renderChatUsers();
+      renderTrending();
+      updateRoleUI();
+    }
+
+    function renderHeader() {
+      const u = current();
+      if (!u) return;
+      if ($("headerAvatar")) $("headerAvatar").innerHTML = u.avatar ? `<img src="${esc(u.avatar)}" alt="">` : esc(first(u.name));
+      if ($("headerName")) $("headerName").textContent = u.name;
+      if ($("sideAvatar")) $("sideAvatar").innerHTML = u.avatar ? `<img src="${esc(u.avatar)}" alt="">` : esc(first(u.name));
+      if ($("sideName")) $("sideName").textContent = u.name;
+      if ($("sideHandle")) $("sideHandle").textContent = `${u.handle} · ${u.role}`;
+
+      const posts = Object.values(state.posts).filter(p => p.userId === u.id).length;
+      if ($("sidePosts")) $("sidePosts").textContent = posts;
+      if ($("sideFollowers")) $("sideFollowers").textContent = Object.keys(u.followers || {}).length;
+      if ($("sideFollowing")) $("sideFollowing").textContent = Object.keys(u.following || {}).length;
+    }
+
+    function canSee(p) {
+      const u = current();
+      if (!u || !p || p.deleted) return false;
+      if (isMod() || p.userId === u.id) return true;
+      return true; // allow public visibility for demo
+    }
+
+    function visiblePosts() {
+      return Object.values(state.posts).filter(canSee).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    }
+
+    async function loadFirstPosts() {
+      if (state.postLoading) return;
+      state.postLoading = true;
+      try {
+        const q = query(ref(db, "posts"), orderByChild("timestamp"), limitToLast(state.postPageSize));
+        const s = await get(q);
+        const d = s.val() || {};
+        state.posts = Object.fromEntries(Object.entries(d));
+        const arr = Object.values(d).sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+        state.postCursor = arr[0]?.timestamp || null;
+        renderPosts();
+      } catch (e) {
+        console.error(e);
+      } finally {
+        state.postLoading = false;
+      }
+    }
+
+    async function loadMorePosts() {
+      if (state.postLoading || state.postCursor === null) return;
+      state.postLoading = true;
+      try {
+        const q = query(ref(db, "posts"), orderByChild("timestamp"), endAt(state.postCursor - 1), limitToLast(state.postPageSize));
+        const s = await get(q), d = s.val() || {};
+        Object.assign(state.posts, d);
+        const arr = Object.values(d).sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+        if (arr.length) state.postCursor = arr[0].timestamp;
+        else state.postCursor = null;
+        renderPosts();
+      } catch (e) {
+        console.error(e);
+      } finally {
+        state.postLoading = false;
+      }
+    }
+
+    function renderPosts() {
+      const q = $("globalSearch")?.value.trim().toLowerCase() || "";
+      let arr = visiblePosts();
+      if (q) arr = arr.filter(p => `${p.content || ""} ${p.location || ""}`.toLowerCase().includes(q));
+      const html = arr.length ? arr.map(postHTML).join("") : `<div class="card empty">No posts found.</div>`;
+      if ($("posts")) $("posts").innerHTML = html + (state.postCursor !== null ? `<button id="loadMorePostsBtn" class="btn secondary load-more">Load older posts</button>` : "");
+      $("loadMorePostsBtn")?.addEventListener("click", loadMorePosts);
+    }
+
+    function postHTML(p) {
+      const u = state.users[p.userId] || { name: "User", handle: "@user" };
+      const liked = !!p.reactions?.[state.uid];
+      const saved = !!p.saved?.[state.uid];
+      let media = "";
+      if (p.media) {
+        media = `<div class="media" data-doublelike="${esc(p.id)}">${p.mediaType === "video" ? `<video src="${esc(p.media)}" controls preload="metadata"></video>` : `<img src="${esc(p.media)}" loading="lazy" alt="Post media">`}<div class="heart" id="heart-${esc(p.id)}">❤️</div></div>`;
+      }
+      const admin = isMod() && p.userId !== state.uid;
+      return `<article class="card" id="post-${esc(p.id)}">
+        <div class="post-head">
+          <div class="post-user" data-profile="${esc(p.userId)}">
+            ${avatarHTML(u, "sm")}
+            <div><b>${esc(u.name)}</b><div class="tiny muted">${esc(u.handle)} · ${esc(fmtTime(p.timestamp))}</div></div>
+          </div>
+          ${admin ? `<button class="btn danger" style="padding:5px 9px;font-size:10px" data-mod-delete="${esc(p.id)}">Remove</button>` : ""}
+        </div>
+        <div class="post-content">${esc(p.content || "")}</div>
+        ${p.location ? `<div class="tiny muted" style="margin-top:6px">📍 ${esc(p.location)}</div>` : ""}
+        ${media}
+        <div class="post-stats">
+          <span>❤️ ${Object.keys(p.reactions || {}).length}</span>
+          <span>💬 ${Object.keys(p.comments || {}).length}</span>
+          <span>🔖 ${Object.keys(p.saved || {}).length}</span>
+        </div>
+        <div class="actions">
+          <button class="action ${liked ? "on" : ""}" data-like="${esc(p.id)}">❤️ Like</button>
+          <button class="action" data-comment="${esc(p.id)}">💬 Comment</button>
+          <button class="action ${saved ? "on" : ""}" data-save="${esc(p.id)}">🔖 Save</button>
+          <button class="action" data-share="${esc(p.id)}">↗ Share</button>
+          ${p.userId === state.uid ? `<button class="action" data-delete="${esc(p.id)}">🗑 Delete</button>` : ""}
+        </div>
+      </article>`;
+    }
+
+    // Event Delegation for Feed Interactions
+    document.addEventListener("click", e => {
+      const target = e.target.closest("[data-like], [data-comment], [data-save], [data-share], [data-delete], [data-mod-delete], [data-profile]");
+      if (!target) return;
+
+      if (target.dataset.like) react(target.dataset.like, "❤️");
+      if (target.dataset.comment) comments(target.dataset.comment);
+      if (target.dataset.save) savePost(target.dataset.save);
+      if (target.dataset.share) sharePost(target.dataset.share);
+      if (target.dataset.delete) deletePost(target.dataset.delete);
+      if (target.dataset.modDelete) moderateDeletePost(target.dataset.modDelete);
+      if (target.dataset.profile) profileModal(target.dataset.profile);
+    });
+
+    document.addEventListener("dblclick", e => {
+      const target = e.target.closest("[data-doublelike]");
+      if (target) doubleLike(target.dataset.doublelike);
+    });
+
+    // 6. Post Actions
+    async function react(id, emoji) {
+      const p = state.posts[id], u = current();
+      if (!p || !u) return;
+      const path = `posts/${id}/reactions/${state.uid}`;
+      if (p.reactions?.[state.uid]) {
+        await remove(ref(db, path));
+      } else {
+        await set(ref(db, path), emoji);
+        await addNotif(p.userId, `❤️ ${u.name} reacted to your post.`);
+      }
+    }
+
+    async function doubleLike(id) {
+      await react(id, "❤️");
+      const h = $(`heart-${id}`);
+      if (h) {
+        h.classList.remove("show");
+        void h.offsetWidth;
+        h.classList.add("show");
+      }
+    }
+
+    async function savePost(id) {
+      const p = state.posts[id];
+      if (!p || !state.uid) return;
+      const path = `posts/${id}/saved/${state.uid}`;
+      if (p.saved?.[state.uid]) {
+        await remove(ref(db, path));
+      } else {
+        await set(ref(db, path), true);
+      }
+      renderSaved();
+    }
+
+    async function deletePost(id) {
+      const p = state.posts[id];
+      if (!p || p.userId !== state.uid) return;
+      if (!confirm("Delete this post?")) return;
+      try {
+        await update(ref(db, `posts/${id}`), { deleted: true, deletedAt: Date.now(), deletedBy: state.uid });
+        toast("Post removed");
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function moderateDeletePost(id) {
+      if (!isMod()) return toast("Moderator access required");
+      if (!confirm("Remove this post as moderation action?")) return;
+      try {
+        await update(ref(db, `posts/${id}`), { deleted: true, deletedAt: Date.now(), deletedBy: state.uid });
+        toast("Post moderated");
+        renderAdmin();
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function sharePost(id) {
+      const p = state.posts[id];
+      if (!p) return;
+      const text = `HABER: ${p.content || ""}`;
+      try {
+        if (navigator.share) await navigator.share({ title: "HABER", text });
+        else {
+          await navigator.clipboard.writeText(text);
+          toast("Post copied to clipboard");
+        }
+      } catch { }
+    }
+
+    async function publish() {
+      const u = current(), text = $("postText")?.value.trim() || "", location = $("postLocation")?.value.trim() || "", file = state.mediaFile;
+      if (!u) return;
+      if (!text && !file) return toast("Write something or attach media");
+      if (file && (!/^(image|video)\//.test(file.type) || file.size > 25 * 1024 * 1024)) return toast("Invalid media or file exceeds 25 MB");
+      if (state.uploading) return;
+      state.uploading = true;
+      if ($("publishBtn")) $("publishBtn").disabled = true;
+
+      try {
+        let media = null, mediaType = null;
+        if (file) {
+          const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+          const path = `posts/${state.uid}/${Date.now()}_${safe}`;
+          const sr = storageRef(storage, path);
+          await uploadBytes(sr, file, { contentType: file.type });
+          media = await getDownloadURL(sr);
+          mediaType = file.type.startsWith("video") ? "video" : "image";
+        }
+        const r = push(ref(db, "posts"));
+        await set(r, {
+          id: r.key,
+          userId: state.uid,
+          content: text,
+          location: location || null,
+          media,
+          mediaType,
+          timestamp: Date.now(),
+          reactions: {},
+          comments: {},
+          saved: {}
+        });
+        if ($("postText")) $("postText").value = "";
+        if ($("postLocation")) $("postLocation").value = "";
+        if ($("postFile")) $("postFile").value = "";
+        state.mediaFile = null;
+        if ($("mediaPreview")) $("mediaPreview").textContent = "";
+        toast("Posted successfully ⚡");
+      } catch (e) {
+        console.error(e);
+        toast("Could not publish post.");
+      } finally {
+        state.uploading = false;
+        if ($("publishBtn")) $("publishBtn").disabled = false;
+      }
+    }
+
+    // 7. Stories & Comments
+    function renderStories() {
+      const active = Object.values(state.stories).filter(s => !s.expiresAt || s.expiresAt > Date.now()).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+      if ($("stories")) {
+        $("stories").innerHTML = `<div class="story add" id="addStoryBtn"><span>➕<br>Add Story</span></div>` +
+          active.map(s => `<div class="story" style="background-image:url('${esc(s.bg)}')" data-story="${esc(s.id)}"><span>${esc(s.user || "Story")}</span></div>`).join("");
+        $("addStoryBtn")?.addEventListener("click", addStory);
+        document.querySelectorAll("[data-story]").forEach(el => el.addEventListener("click", () => viewStory(el.dataset.story)));
+      }
+    }
+
+    async function addStory() {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = "image/*";
+      input.onchange = async () => {
+        const f = input.files[0];
+        if (!f || f.size > 10 * 1024 * 1024) return toast("Story image max is 10 MB");
+        try {
+          const sr = storageRef(storage, `stories/${state.uid}/${Date.now()}_${f.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`);
+          await uploadBytes(sr, f, { contentType: f.type });
+          const url = await getDownloadURL(sr), r = push(ref(db, "stories"));
+          await set(r, { id: r.key, userId: state.uid, user: current()?.name || "User", bg: url, timestamp: Date.now(), expiresAt: Date.now() + 86400000 });
+          toast("Story published");
+        } catch (e) {
+          console.error(e);
+          toast("Could not upload story");
+        }
+      };
+      input.click();
+    }
+
+    function viewStory(id) {
+      const s = state.stories[id];
+      if (!s) return;
+      openModal(`<div style="text-align:center"><img src="${esc(s.bg)}" style="max-width:100%;max-height:70dvh;border-radius:16px"><h3 style="margin-top:10px">${esc(s.user)}</h3></div>`);
+    }
+
+    async function comments(id) {
+      state.commentPost = id;
+      renderComments();
+      $("commentsModal")?.classList.add("show");
+    }
+
+    function renderComments() {
+      const p = state.posts[state.commentPost];
+      if (!p) return;
+      const arr = Object.values(p.comments || {}).sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+      if ($("commentsTitle")) $("commentsTitle").textContent = `Comments · ${arr.length}`;
+      if ($("commentsList")) {
+        $("commentsList").innerHTML = arr.length ? arr.map(c => `
+          <div class="comment">
+            ${avatarHTML(state.users[c.userId], "sm")}
+            <div class="comment-body">
+              <b>${esc(state.users[c.userId]?.name || "User")}</b>
+              <div style="margin-top:3px">${esc(c.text)}</div>
+              <div class="comment-actions">
+                ${esc(fmtTime(c.timestamp))} · ❤️ ${Object.keys(c.likes || {}).length} 
+                <span data-like-comment="${esc(c.id)}">Like</span>
+              </div>
+            </div>
+          </div>`).join("") : `<div class="empty">No comments yet.</div>`;
+
+        document.querySelectorAll("[data-like-comment]").forEach(el => {
+          el.addEventListener("click", () => commentLike(state.commentPost, el.dataset.likeComment));
+        });
+      }
+    }
+
+    async function sendComment() {
+      const p = state.posts[state.commentPost], text = $("commentInput")?.value.trim(), u = current();
+      if (!p || !text || !u) return;
+      const r = push(ref(db, `posts/${p.id}/comments`));
+      await set(r, { id: r.key, userId: u.id, text, timestamp: Date.now(), likes: {} });
+      if ($("commentInput")) $("commentInput").value = "";
+      await addNotif(p.userId, `💬 ${u.name} commented on your post.`);
+      renderComments();
+    }
+
+    async function commentLike(pid, cid) {
+      const c = state.posts[pid]?.comments?.[cid];
+      if (!c) return;
+      const path = `posts/${pid}/comments/${cid}/likes/${state.uid}`;
+      if (c.likes?.[state.uid]) await remove(ref(db, path));
+      else await set(ref(db, path), true);
+      renderComments();
+    }
+
+    // 8. Profiles & Social
+    function renderSaved() {
+      const arr = visiblePosts().filter(p => p.saved?.[state.uid]);
+      if ($("savedPosts")) $("savedPosts").innerHTML = arr.length ? arr.map(postHTML).join("") : `<div class="card empty">No saved posts.</div>`;
+    }
+
+    function renderProfile() {
+      const u = current();
+      if (!u) return;
+      if ($("profileAvatar")) $("profileAvatar").innerHTML = u.avatar ? `<img src="${esc(u.avatar)}" alt="">` : esc(first(u.name));
+      if ($("profileName")) $("profileName").textContent = u.name;
+      if ($("profileHandle")) $("profileHandle").textContent = `${u.handle} · ${u.email || ""}`;
+      if ($("profilePosts")) $("profilePosts").textContent = Object.values(state.posts).filter(p => p.userId === u.id && !p.deleted).length;
+      if ($("profileFollowers")) $("profileFollowers").textContent = Object.keys(u.followers || {}).length;
+      if ($("profileFollowing")) $("profileFollowing").textContent = Object.keys(u.following || {}).length;
+      if ($("myPosts")) {
+        $("myPosts").innerHTML = Object.values(state.posts).filter(p => p.userId === u.id && !p.deleted)
+          .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)).map(postHTML).join("") || `<div class="empty">No posts yet.</div>`;
+      }
+    }
+
+    async function toggleFollow(id) {
+      const me = current(), target = state.users[id];
+      if (!me || !target || id === me.id) return;
+      const following = !!me.following?.[id];
+      const patch = {};
+      patch[`users/${me.id}/following/${id}`] = following ? null : true;
+      patch[`users/${id}/followers/${me.id}`] = following ? null : true;
+      await update(ref(db), patch);
+      if (!following) await addNotif(id, `👤 ${me.name} followed you.`);
+    }
+
+    function renderPeople() {
+      const me = current();
+      if (!me) return;
+      let arr = Object.values(state.users).filter(u => u.id !== me.id && !u.disabled);
+      if (state.userTab === "followers") arr = arr.filter(u => me.followers?.[u.id]);
+      if (state.userTab === "following") arr = arr.filter(u => me.following?.[u.id]);
+      if ($("people")) {
+        $("people").innerHTML = arr.map(u => `
+          <div class="card person">
+            <div class="person-main" data-profile="${esc(u.id)}">
+              ${avatarHTML(u, "sm")}
+              <div><b>${esc(u.name)}</b><div class="small muted">${esc(u.handle)} · ${u.online ? "Online" : "Offline"}</div></div>
+            </div>
+            ${u.id !== me.id ? `<button class="btn ${me.following?.[u.id] ? "secondary" : "primary"}" data-toggle-follow="${esc(u.id)}">${me.following?.[u.id] ? "Following" : "Follow"}</button>` : ""}
+          </div>`).join("") || `<div class="card empty">No members found.</div>`;
+
+        document.querySelectorAll("[data-toggle-follow]").forEach(el => {
+          el.addEventListener("click", () => toggleFollow(el.dataset.toggleFollow));
+        });
+      }
+    }
+
+    function profileModal(id) {
+      const u = state.users[id];
+      if (!u) return;
+      const posts = Object.values(state.posts).filter(p => p.userId === id && !p.deleted).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)).slice(0, 5);
+      const me = current();
+      openModal(`
+        <div style="text-align:center">
+          ${avatarHTML(u, "lg")}
+          <h2 style="margin-top:10px">${esc(u.name)}</h2>
+          <p class="muted small">${esc(u.handle)} · ${esc(u.role)}</p>
+          <div class="stats">
+            <div class="stat"><b>${posts.length}</b><span>Recent</span></div>
+            <div class="stat"><b>${Object.keys(u.followers || {}).length}</b><span>Followers</span></div>
+            <div class="stat"><b>${Object.keys(u.following || {}).length}</b><span>Following</span></div>
+          </div>
+          ${me && me.id !== id ? `<button class="btn ${me.following?.[id] ? "secondary" : "primary"}" id="modalFollowBtn" style="margin-top:14px">${me.following?.[id] ? "Following" : "Follow"}</button>` : ""}
+          <div style="text-align:left;margin-top:18px">
+            <b class="small muted">RECENT POSTS</b>
+            ${posts.length ? posts.map(p => `<div style="border-bottom:1px solid var(--border);padding:10px 0;font-size:12px">${esc(p.content || "[Media post]")}</div>`).join("") : `<div class="empty">No posts</div>`}
+          </div>
+        </div>`);
+
+      $("modalFollowBtn")?.addEventListener("click", () => {
+        toggleFollow(id);
+        profileModal(id);
+      });
+    }
+
+    // 9. Notifications & Chat
+    async function addNotif(target, text) {
+      if (!target || target === state.uid) return;
+      const r = push(ref(db, `notifications/${target}`));
+      await set(r, { id: r.key, text, timestamp: Date.now(), read: false });
+    }
+
+    function renderNotifications() {
+      const arr = Object.values(state.notifs).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+      const unread = arr.filter(n => !n.read).length;
+      if ($("notifCount")) {
+        $("notifCount").textContent = unread;
+        $("notifCount").style.display = unread ? "inline" : "none";
+      }
+      if ($("notifList")) {
+        $("notifList").innerHTML = arr.length ? arr.slice(0, 30).map(n => `
+          <div class="notif">
+            ${esc(n.text)}
+            <div class="tiny muted" style="margin-top:3px">${esc(fmtTime(n.timestamp))}</div>
+          </div>`).join("") : `<div class="empty">No notifications</div>`;
+      }
+    }
+
+    async function clearNotifs() { await remove(ref(db, `notifications/${state.uid}`)); }
+
+    function renderTrending() {
+      const counts = {};
+      Object.values(state.posts).forEach(p => {
+        const tags = String(p.content || "").match(/#[\p{L}\p{N}_]+/gu) || [];
+        tags.forEach(t => counts[t] = (counts[t] || 0) + 1);
+      });
+      const top = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 6);
+      if ($("trending")) {
+        $("trending").innerHTML = (top.length ? top : [["#Technology", 0], ["#haberNeo", 0], ["#WebDev", 0], ["#AI", 0]])
+          .map(([t, n]) => `<span class="tag" data-tag="${esc(t)}">${esc(t)} ${n ? `<small class="muted">(${n})</small>` : ""}</span>`).join("");
+        document.querySelectorAll("[data-tag]").forEach(el => el.addEventListener("click", () => searchTag(el.dataset.tag)));
+      }
+      if ($("networkSummary")) {
+        $("networkSummary").innerHTML = `${Object.keys(state.users).length} members<br>${Object.values(state.posts).filter(p => !p.deleted).length} loaded posts<br>${Object.values(state.stories).filter(s => !s.expiresAt || s.expiresAt > Date.now()).length} active stories`;
+      }
+    }
+
+    function searchTag(t) {
+      if ($("globalSearch")) $("globalSearch").value = t;
+      nav("feed");
+      renderPosts();
+    }
+
+    function renderChatUsers() {
+      const me = current();
+      if (!me) return;
+      const q = $("chatSearch")?.value.toLowerCase().trim() || "";
+      const users = Object.values(state.users).filter(u => u.id !== me.id && !u.disabled).filter(u => `${u.name} ${u.handle}`.toLowerCase().includes(q));
+      if ($("chatUsers")) {
+        $("chatUsers").innerHTML = users.map(u => `
+          <div class="chat-user ${state.chatUid === u.id ? "active" : ""}" data-chat-user="${esc(u.id)}">
+            ${avatarHTML(u, "sm")}
+            <div class="chat-info">
+              <div class="chat-name">${esc(u.name)}</div>
+              <div class="chat-preview">${u.online ? "Online" : "Offline"}</div>
+            </div>
+          </div>`).join("") || `<div class="empty">No contacts</div>`;
+
+        document.querySelectorAll("[data-chat-user]").forEach(el => {
+          el.addEventListener("click", () => selectChat(el.dataset.chatUser));
+        });
+      }
+    }
+
+    async function ensureChat(a, b) {
+      const key = uidKey(a, b), r = ref(db, `chats/${key}/members`);
+      const s = await get(r);
+      if (!s.exists()) await set(r, { [a]: true, [b]: true });
+      return key;
+    }
+
+    async function selectChat(id) {
+      state.chatUid = id;
+      $("chat")?.classList.add("mobile-room");
+      const u = state.users[id];
+      if (!u) return;
+      if ($("chatAvatar")) $("chatAvatar").innerHTML = u.avatar ? `<img src="${esc(u.avatar)}" alt="">` : esc(first(u.name));
+      if ($("chatName")) $("chatName").textContent = u.name;
+      updateChatStatus();
+      renderChatUsers();
+      await loadFirstMessages();
+      $("chatInput")?.focus();
+    }
+
+    function updateChatStatus() {
+      if (!state.chatUid) return;
+      const u = state.users[state.chatUid], typing = !!state.typing?.[state.chatUid];
+      if ($("chatStatus")) $("chatStatus").textContent = typing ? "Typing..." : u?.online ? "Online" : "Offline";
+    }
+
+    async function loadFirstMessages() {
+      state.chatUnsub.forEach(f => { try { f(); } catch { } });
+      state.chatUnsub = [];
+      state.messageCursor = null;
+      if (!state.uid || !state.chatUid) return;
+      const key = uidKey(state.uid, state.chatUid);
+      try {
+        await ensureChat(state.uid, state.chatUid);
+        const q = query(ref(db, `messages/${key}`), orderByChild("timestamp"), limitToLast(state.messagePageSize));
+        const s = await get(q), d = s.val() || {};
+        state.messages[key] = d;
+        const arr = Object.values(d).sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+        state.messageCursor = arr[0]?.timestamp || null;
+        renderMessages();
+        const live = onValue(q, s2 => {
+          state.messages[key] = s2.val() || {};
+          renderMessages();
+        });
+        state.chatUnsub.push(live);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function loadMoreMessages() {
+      if (state.messageLoading || state.messageCursor === null || !state.chatUid) return;
+      state.messageLoading = true;
+      const key = uidKey(state.uid, state.chatUid);
+      try {
+        const q = query(ref(db, `messages/${key}`), orderByChild("timestamp"), endAt(state.messageCursor - 1), limitToLast(state.messagePageSize));
+        const s = await get(q), d = s.val() || {};
+        state.messages[key] = { ...d, ...(state.messages[key] || {}) };
+        const arr = Object.values(d).sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+        if (arr.length) state.messageCursor = arr[0].timestamp;
+        else state.messageCursor = null;
+        renderMessages();
+      } catch (e) {
+        console.error(e);
+      } finally {
+        state.messageLoading = false;
+      }
+    }
+
+    function renderMessages() {
+      const me = current();
+      if (!me || !state.chatUid) return;
+      const key = uidKey(me.id, state.chatUid), arr = Object.values(state.messages[key] || {}).sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+      if ($("messagesList")) {
+        $("messagesList").innerHTML = `${state.messageCursor !== null ? `<button class="btn secondary msg-more" id="loadMoreMsgsBtn">Load older messages</button>` : ""}` +
+          (arr.length ? arr.map(m => `
+            <div class="bubble-row ${m.senderId === me.id ? "me" : "other"}">
+              <div class="bubble ${m.senderId === me.id ? "me" : "other"}">${esc(m.text)}</div>
+              <span class="msg-time">${esc(fmtTime(m.timestamp))}</span>
+            </div>`).join("") : `<div class="empty">Say hi to start the conversation 👋</div>`);
+        $("messagesList").scrollTop = $("messagesList").scrollHeight;
+        $("loadMoreMsgsBtn")?.addEventListener("click", loadMoreMessages);
+      }
+      updateChatStatus();
+    }
+
+    async function sendMessage() {
+      const text = $("chatInput")?.value.trim(), me = current();
+      if (!text || !me || !state.chatUid || text.length > 2000) return;
+      if (state.users[state.chatUid]?.disabled) return toast("This account is unavailable");
+      const key = await ensureChat(me.id, state.chatUid);
+      const r = push(ref(db, `messages/${key}`));
+      await set(r, { id: r.key, senderId: me.id, receiverId: state.chatUid, text, timestamp: Date.now(), read: false });
+      if ($("chatInput")) $("chatInput").value = "";
+      await remove(ref(db, `typing/${me.id}/${state.chatUid}`));
+      await addNotif(state.chatUid, `💬 New message from ${me.name}.`);
+    }
+
+    let typingTimer;
+    async function handleTyping() {
+      const me = current();
+      if (!me || !state.chatUid) return;
+      await set(ref(db, `typing/${me.id}/${state.chatUid}`), true);
+      clearTimeout(typingTimer);
+      typingTimer = setTimeout(() => remove(ref(db, `typing/${me.id}/${state.chatUid}`)), 1800);
+    }
+
+    // 10. Profile Editing & Admin Controls
+    function editProfile() {
+      const u = current();
+      if (!u) return;
+      openModal(`
+        <h3>Edit Profile</h3>
+        <div style="display:grid;gap:10px;margin-top:15px">
+          <input id="editName" class="input" value="${esc(u.name)}" maxlength="60" placeholder="Name">
+          <input id="editHandle" class="input" value="${esc(u.handle)}" placeholder="@handle">
+          <input id="editAvatar" class="input" value="${esc(u.avatar || "")}" placeholder="Avatar image URL (optional)">
+          <button class="btn primary" id="saveProfileBtn">Save Changes</button>
+        </div>`);
+      $("saveProfileBtn")?.addEventListener("click", saveProfile);
+    }
+
+    async function saveProfile() {
+      const u = current(), name = $("editName").value.trim(), handleRaw = $("editHandle").value.trim().toLowerCase(), avatar = $("editAvatar").value.trim();
+      if (!name || !/^@?[a-z0-9_]{3,30}$/.test(handleRaw)) return toast("Invalid name or handle");
+      const handle = handleRaw.startsWith("@") ? handleRaw : "@" + handleRaw;
+      const h = handle.slice(1);
+      const old = String(u.handle || "").slice(1);
+
+      if (h !== old) {
+        const taken = await get(ref(db, `userHandles/${h}`));
+        if (taken.exists() && taken.val() !== u.id) return toast("Handle already exists");
+      }
+
+      const patch = { name, handle, avatar: avatar || null };
+      const updates = {};
+      updates[`users/${u.id}`] = { ...u, ...patch };
+
+      if (h !== old) {
+        updates[`userHandles/${old}`] = null;
+        updates[`userHandles/${h}`] = u.id;
+      }
+
+      await update(ref(db), updates);
+      if (auth.currentUser) await updateAuthProfile(auth.currentUser, { displayName: name });
+      closeModal();
+      toast("Profile updated");
+    }
+
+    function renderAdmin() {
+      if (!isAdmin()) return;
+      const users = Object.values(state.users);
+      if ($("adminContent")) {
+        $("adminContent").innerHTML = `
+          <h3>Admin Panel (${users.length} Users)</h3>
+          <div style="margin-top:15px;display:grid;gap:10px">
+            ${users.map(u => `
+              <div class="card" style="display:flex;justify-content:space-between;align-items:center;padding:10px">
+                <div>
+                  <b>${esc(u.name)}</b> (${esc(u.handle)})
+                  <div class="tiny muted">Role: ${esc(u.role)} | Status: ${u.disabled ? "Disabled" : "Active"}</div>
+                </div>
+                <div style="display:flex;gap:5px">
+                  <button class="btn secondary" style="padding:4px 8px;font-size:11px" data-disable-user="${esc(u.id)}">${u.disabled ? "Enable" : "Disable"}</button>
+                  <button class="btn danger" style="padding:4px 8px;font-size:11px" data-role-user="${esc(u.id)}">Role</button>
+                </div>
+              </div>
+            `).join("")}
+          </div>`;
+
+        document.querySelectorAll("[data-disable-user]").forEach(el => el.addEventListener("click", () => toggleDisableUser(el.dataset.disableUser)));
+        document.querySelectorAll("[data-role-user]").forEach(el => el.addEventListener("click", () => changeUserRole(el.dataset.roleUser)));
+      }
+    }
+
+    async function toggleDisableUser(uid) {
+      if (!isAdmin()) return;
+      const u = state.users[uid];
+      if (!u) return;
+      await update(ref(db, `users/${uid}`), { disabled: !u.disabled });
+      toast(`User ${u.disabled ? "enabled" : "disabled"}`);
+    }
+
+    async function changeUserRole(uid) {
+      if (!isAdmin()) return;
+      const u = state.users[uid];
+      if (!u) return;
+      const role = prompt("Enter new role (user, moderator, admin):", u.role);
+      if (role && ["user", "moderator", "admin"].includes(role)) {
+        await update(ref(db, `users/${uid}`), { role });
+        toast("Role updated");
+      }
+    }
+
+    // 11. Global Initializations & Bindings
+    document.addEventListener("DOMContentLoaded", () => {
+      // Auth Switch
+      $("showSignup")?.addEventListener("click", () => { hide("login"); show("signup"); });
+      $("showLogin")?.addEventListener("click", () => { hide("signup"); show("login"); });
+
+      // Forms
+      $("loginForm")?.addEventListener("submit", login);
+      $("signupForm")?.addEventListener("submit", signup);
+
+      // Navigation Buttons
+      document.querySelectorAll(".nav, .mobile-nav button").forEach(btn => {
+        btn.addEventListener("click", () => nav(btn.dataset.tab));
+      });
+
+      document.querySelectorAll("[data-tab-link]").forEach(el => {
+        el.addEventListener("click", () => nav(el.dataset.tabLink));
+      });
+
+      // Post Composer
+      $("mediaBtn")?.addEventListener("click", () => $("postFile")?.click());
+      $("postFile")?.addEventListener("change", e => {
+        state.mediaFile = e.target.files[0] || null;
+        if ($("mediaPreview")) $("mediaPreview").textContent = state.mediaFile ? `Attached: ${state.mediaFile.name}` : "";
+      });
+      $("publishBtn")?.addEventListener("click", publish);
+
+      // Chat Input
+      $("sendBtn")?.addEventListener("click", sendMessage);
+      $("chatInput")?.addEventListener("input", handleTyping);
+      $("chatInput")?.addEventListener("keydown", e => { if (e.key === "Enter") sendMessage(); });
+      $("chatSearch")?.addEventListener("input", renderChatUsers);
+      $("chatBack")?.addEventListener("click", () => $("chat")?.classList.remove("mobile-room"));
+
+      // Comments Input
+      $("commentSend")?.addEventListener("click", sendComment);
+      $("commentInput")?.addEventListener("keydown", e => { if (e.key === "Enter") sendComment(); });
+
+      // User Directory Tabs
+      document.querySelectorAll("[data-user-tab]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          document.querySelectorAll("[data-user-tab]").forEach(b => b.classList.remove("active"));
+          btn.classList.add("active");
+          state.userTab = btn.dataset.userTab;
+          renderPeople();
+        });
+      });
+
+      // Notifications Toggle
+      $("notifBtn")?.addEventListener("click", () => {
+        $("notifMenu")?.classList.toggle("show");
+      });
+      $("clearNotifs")?.addEventListener("click", clearNotifs);
+
+      // Theme Toggle
+      $("themeBtn")?.addEventListener("click", () => {
+        state.dark = !state.dark;
+        setTheme();
+      });
+      $("darkToggle")?.addEventListener("change", e => {
+        state.dark = e.target.checked;
+        setTheme();
+      });
+
+      // Modals
+      $("modalClose")?.addEventListener("click", () => closeModal("modal"));
+      $("commentsClose")?.addEventListener("click", () => closeModal("commentsModal"));
+
+      // Account Options
+      $("editProfileBtn")?.addEventListener("click", editProfile);
+      $("logoutBtn")?.addEventListener("click", logout);
+
+      // Global Search Bar
+      $("globalSearch")?.addEventListener("input", renderPosts);
+    });
+  </script>
+</body>
+
+</html>
