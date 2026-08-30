@@ -1358,7 +1358,8 @@
       let rawHandle = $("signupHandle").value.trim().toLowerCase().replace(/^@/, '');
       const handle = "@" + rawHandle;
 
-      if (!name || !email || !/^^[a-z0-9_]{3,30}$/.test(rawHandle) || pass.length < 8) {
+      // الكود الصحيح
+if (!name || !email || !/^[a-z0-9_]{3,30}$/.test(rawHandle) || pass.length < 8) {
         return toast("Enter valid details. Username must be 3-30 valid chars and password 8+ chars.");
       }
 
