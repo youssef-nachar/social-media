@@ -957,9 +957,9 @@
       <h2>Welcome to the Future 🚀</h2>
       <p class="small muted">Sign in to your HABER network</p>
       <form id="loginForm" class="auth-form">
-        <input id="loginUser" class="input" placeholder="Email address" required>
+        <input id="loginUser" class="input" type="email" placeholder="Email address" autocomplete="email" inputmode="email" required>
         <input id="loginPass" class="input" type="password" placeholder="Password" required>
-        <button class="btn primary" type="submit">Log In</button>
+        <button id="loginBtn" class="btn primary" type="submit">Log In</button>
       </form>
       <div class="auth-switch">Don't have an account? <span id="showSignup">Create account</span></div>
     </div>
@@ -1180,7 +1180,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-    import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile as updateAuthProfile } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+    import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile as updateAuthProfile, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
     import { getDatabase, ref, set, get, push, update, remove, onValue, query, orderByChild, limitToLast, endAt } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
     import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-storage.js";
 
@@ -1316,13 +1316,42 @@
         "auth/user-disabled": "This account is disabled",
         "auth/too-many-requests": "Too many attempts. Try again later"
       };
-      return m[e?.code] || e?.message || "Authentication failed";
+      return m[e?.code] || "Authentication failed. Please check your email and password.";
     }
 
     // 4. Authentication & Core
+    // SECURITY NOTE:
+    // Firebase Authentication is the source of truth for identity.
+    // Database/Storage rules MUST enforce authorization server-side.
+    let authBusy = false;
+    let bootingUid = null;
+
+    function isValidEmail(email) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    }
+
+    function setLoginBusy(busy) {
+      authBusy = busy;
+      const btn = $("loginBtn");
+      const user = $("loginUser");
+      const pass = $("loginPass");
+      if (btn) {
+        btn.disabled = busy;
+        btn.textContent = busy ? "Signing in…" : "Log In";
+      }
+      if (user) user.disabled = busy;
+      if (pass) pass.disabled = busy;
+    }
+
     async function ensureProfile(fbUser, extra = {}) {
-      const snap = await get(ref(db, `users/${fbUser.uid}`));
+      if (!fbUser?.uid) throw new Error("Authentication session is invalid.");
+
+      const profileRef = ref(db, `users/${fbUser.uid}`);
+      const snap = await get(profileRef);
       const existing = snap.val() || {};
+
+      // Never trust role/disabled values coming from the browser.
+      // They are only displayed here; Firebase Database Rules must enforce them.
       const profile = normalizeUser({
         ...existing,
         ...extra,
@@ -1333,73 +1362,316 @@
         role: existing.role || "user",
         disabled: !!existing.disabled
       });
+
       if (!snap.exists()) {
-        await set(ref(db, `users/${fbUser.uid}`), { ...profile, followers: {}, following: {}, createdAt: Date.now() });
-      }
-      return profile;
-    }
-
-    async function login(e) {
-      if (e) e.preventDefault();
-      const email = $("loginUser").value.trim(), pass = $("loginPass").value;
-      if (!email || !pass) return toast("Please fill in all fields");
-      try {
-        await signInWithEmailAndPassword(auth, email, pass);
-      } catch (err) {
-        toast(friendlyAuthError(err));
-      }
-    }
-
-    async function signup(e) {
-      if (e) e.preventDefault();
-      const name = $("signupName").value.trim();
-      const email = $("signupEmail").value.trim().toLowerCase();
-      const pass = $("signupPass").value;
-      let rawHandle = $("signupHandle").value.trim().toLowerCase().replace(/^@/, '');
-      const handle = "@" + rawHandle;
-
-      // الكود الصحيح
-if (!name || !email || !/^[a-z0-9_]{3,30}$/.test(rawHandle) || pass.length < 8) {
-        return toast("Enter valid details. Username must be 3-30 valid chars and password 8+ chars.");
-      }
-
-      try {
-        const exists = await get(ref(db, "userHandles/" + rawHandle));
-        if (exists.exists()) return toast("Username is already taken");
-
-        const cred = await createUserWithEmailAndPassword(auth, email, pass);
-        await updateAuthProfile(cred.user, { displayName: name });
-        await set(ref(db, `userHandles/${rawHandle}`), cred.user.uid);
-        await set(ref(db, `users/${cred.user.uid}`), {
-          id: cred.user.uid,
-          name,
-          handle,
-          email,
+        await set(profileRef, {
+          id: fbUser.uid,
+          name: profile.name,
+          handle: profile.handle,
+          email: profile.email,
           role: "user",
           disabled: false,
           followers: {},
           following: {},
           createdAt: Date.now(),
-          online: true,
+          online: false,
           lastSeen: Date.now()
         });
-        toast("Account created successfully 🚀");
-      } catch (err) {
-        console.error("Signup error details:", err);
-        toast(friendlyAuthError(err));
       }
+
+      return profile;
     }
+
+async function login(e) {
+  e?.preventDefault();
+
+  if (authBusy) return;
+
+  const emailInput = $("loginUser");
+  const passInput = $("loginPass");
+
+  const email = emailInput?.value.trim().toLowerCase() || "";
+  const pass = passInput?.value || "";
+
+  if (!email) {
+    return toast("Please enter your email address.");
+  }
+
+  if (!isValidEmail(email)) {
+    return toast("Please enter a valid email address.");
+  }
+
+  if (!pass) {
+    return toast("Please enter your password.");
+  }
+
+  setLoginBusy(true);
+
+  try {
+    // Keep the user logged in on this browser
+    await setPersistence(auth, browserLocalPersistence);
+
+    console.log("Attempting login:", email);
+
+    const credential = await signInWithEmailAndPassword(
+      auth,
+      email,
+      pass
+    );
+
+    console.log(
+      "Login successful:",
+      credential.user.uid,
+      credential.user.email
+    );
+
+    // onAuthStateChanged() will handle application boot.
+
+  } catch (err) {
+
+    console.error("LOGIN ERROR");
+    console.error("Code:", err?.code);
+    console.error("Message:", err?.message);
+    console.error("Full error:", err);
+
+    switch (err?.code) {
+
+      case "auth/invalid-credential":
+        toast(
+          "Invalid email or password. Please check your credentials."
+        );
+        break;
+
+      case "auth/user-not-found":
+        toast(
+          "No account exists with this email address."
+        );
+        break;
+
+      case "auth/wrong-password":
+        toast(
+          "Incorrect password."
+        );
+        break;
+
+      case "auth/invalid-email":
+        toast(
+          "The email address is invalid."
+        );
+        break;
+
+      case "auth/user-disabled":
+        toast(
+          "This account has been disabled."
+        );
+        break;
+
+      case "auth/too-many-requests":
+        toast(
+          "Too many login attempts. Please try again later."
+        );
+        break;
+
+      case "auth/network-request-failed":
+        toast(
+          "Network error. Please check your internet connection."
+        );
+        break;
+
+      case "auth/operation-not-allowed":
+        toast(
+          "Email/password authentication is not enabled in Firebase."
+        );
+        break;
+
+      default:
+        toast(
+          friendlyAuthError(err) ||
+          "Login failed. Please try again."
+        );
+    }
+
+  } finally {
+    setLoginBusy(false);
+  }
+}
+
+
+async function signup(e) {
+  e?.preventDefault();
+  if (authBusy) return;
+
+  const name = $("signupName")?.value.trim() || "";
+  const email = $("signupEmail")?.value.trim().toLowerCase() || "";
+  const pass = $("signupPass")?.value || "";
+  const rawHandle = ($("signupHandle")?.value.trim().toLowerCase() || "").replace(/^@/, "");
+  const handle = "@" + rawHandle;
+
+  if (name.length < 2 || name.length > 60) {
+    return toast("Name must be between 2 and 60 characters.");
+  }
+
+  if (!isValidEmail(email)) {
+    return toast("Please enter a valid email address.");
+  }
+
+  if (!/^[a-z0-9_]{3,30}$/.test(rawHandle)) {
+    return toast("Username must be 3-30 letters, numbers or underscores.");
+  }
+
+  if (pass.length < 8) {
+    return toast("Password must contain at least 8 characters.");
+  }
+
+  authBusy = true;
+
+  const btn = $("signupForm")?.querySelector("button[type=submit]");
+
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "Creating…";
+  }
+
+  let cred = null;
+
+  try {
+    // Keep authentication persistent
+    await setPersistence(auth, browserLocalPersistence);
+
+    // ------------------------------------------------
+    // 1. CREATE FIREBASE AUTH ACCOUNT FIRST
+    // ------------------------------------------------
+    cred = await createUserWithEmailAndPassword(auth, email, pass);
+
+    // ------------------------------------------------
+    // 2. UPDATE AUTH PROFILE
+    // ------------------------------------------------
+    await updateAuthProfile(cred.user, {
+      displayName: name
+    });
+
+    // At this point the user is authenticated.
+    // Database Rules can now safely use auth.uid.
+    // ------------------------------------------------
+
+    // ------------------------------------------------
+    // 3. CHECK USERNAME
+    // ------------------------------------------------
+    const handleRef = ref(db, `userHandles/${rawHandle}`);
+    const handleSnap = await get(handleRef);
+
+    if (handleSnap.exists() && handleSnap.val() !== cred.user.uid) {
+
+      // Username already exists.
+      // Remove the newly created Auth account because
+      // registration cannot continue.
+      await cred.user.delete().catch(() => {});
+
+      return toast("Username is already taken.");
+    }
+
+    // ------------------------------------------------
+    // 4. CREATE USER PROFILE + HANDLE
+    // ------------------------------------------------
+    const userProfile = {
+      id: cred.user.uid,
+      name: name,
+      handle: handle,
+      email: email,
+      role: "user",
+      disabled: false,
+      followers: {},
+      following: {},
+      createdAt: Date.now(),
+      online: true,
+      lastSeen: Date.now()
+    };
+
+    const updates = {};
+
+    updates[`users/${cred.user.uid}`] = userProfile;
+    updates[`userHandles/${rawHandle}`] = cred.user.uid;
+
+    await update(ref(db), updates);
+
+    // ------------------------------------------------
+    // 5. SUCCESS
+    // ------------------------------------------------
+    $("signupForm")?.reset();
+
+    toast("Account created successfully 🚀");
+
+    // Firebase automatically keeps the user signed in.
+    // onAuthStateChanged() will boot the application.
+
+  } catch (err) {
+
+    console.error(
+      "Signup failed:",
+      err?.code || err,
+      err?.message || ""
+    );
+
+    // If Auth account was created but database setup failed,
+    // don't hide the real problem.
+    if (cred?.user) {
+      console.warn(
+        "Firebase Authentication account was created, " +
+        "but the database profile could not be completed."
+      );
+    }
+
+    const dbMessages = {
+      "PERMISSION_DENIED":
+        "Database permission denied. Please check Firebase Realtime Database Rules.",
+
+      "permission-denied":
+        "Database permission denied. Please check Firebase Realtime Database Rules."
+    };
+
+    if (dbMessages[err?.code]) {
+      toast(dbMessages[err.code]);
+    } else {
+      toast(friendlyAuthError(err));
+    }
+
+  } finally {
+
+    authBusy = false;
+
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = "Create Account";
+    }
+  }
+}
+
+
     async function logout() {
+      const uid = state.uid;
+      cleanupListeners();
+      state.uid = null;
+      state.authUser = null;
+      state.users = {};
+      state.posts = {};
+      state.stories = {};
+      state.notifs = {};
+      state.messages = {};
+      state.chatUid = null;
+
       try {
-        if (state.uid) await update(ref(db, `users/${state.uid}`), { online: false, lastSeen: Date.now() });
+        if (uid) {
+          // Presence is best-effort; sign-out must still happen if this fails.
+          await update(ref(db, `users/${uid}`), { online: false, lastSeen: Date.now() }).catch(() => {});
+        }
         await signOut(auth);
       } catch (e) {
-        console.error(e);
+        console.error("Logout failed:", e);
       } finally {
-        cleanupListeners();
-        state.uid = null;
-        state.authUser = null;
+        bootingUid = null;
+        setLoginBusy(false);
         hide("app");
+        hide("signup");
         show("login");
         $("loginForm")?.reset();
         toast("Logged out");
@@ -1407,44 +1679,50 @@ if (!name || !email || !/^[a-z0-9_]{3,30}$/.test(rawHandle) || pass.length < 8) 
     }
 
     function cleanupListeners() {
-      state.unsub.forEach(f => { try { f(); } catch { } });
+      state.unsub.forEach(f => { try { f(); } catch {} });
       state.unsub = [];
-      state.chatUnsub.forEach(f => { try { f(); } catch { } });
+      state.chatUnsub.forEach(f => { try { f(); } catch {} });
       state.chatUnsub = [];
     }
 
     function listenCore() {
       cleanupListeners();
+
+      // Keep the users listener for the community UI. Rules must allow only
+      // the fields/data that authenticated users are permitted to see.
       const usersQ = query(ref(db, "users"));
       state.unsub.push(onValue(usersQ, s => {
         const d = s.val() || {};
         state.users = Object.fromEntries(Object.entries(d).map(([id, u]) => [id, normalizeUser(u, id)]));
         const me = current();
         if (me?.disabled) {
-          toast("Your account has been disabled.");
+          toast("Your account is disabled.");
           logout();
           return;
         }
         updateRoleUI();
         renderAll();
+      }, err => {
+        console.error("Users listener:", err);
+        toast("Account data could not be loaded. Check Firebase Database Rules.");
       }));
 
       const storiesQ = query(ref(db, "stories"), orderByChild("timestamp"), limitToLast(60));
       state.unsub.push(onValue(storiesQ, s => {
         state.stories = s.val() || {};
         renderStories();
-      }));
+      }, err => console.error("Stories listener:", err)));
 
       state.unsub.push(onValue(ref(db, `notifications/${state.uid}`), s => {
         state.notifs = s.val() || {};
         renderNotifications();
-      }));
+      }, err => console.error("Notifications listener:", err)));
 
       state.unsub.push(onValue(ref(db, `typing/${state.uid}`), s => {
         state.typing = s.val() || {};
         updateChatStatus();
         renderChatUsers();
-      }));
+      }, err => console.error("Typing listener:", err)));
 
       watchConnection();
       loadFirstPosts();
@@ -1462,35 +1740,83 @@ if (!name || !email || !/^[a-z0-9_]{3,30}$/.test(rawHandle) || pass.length < 8) 
     }
 
     async function bootApp(fbUser) {
+      if (!fbUser?.uid) return;
+      if (bootingUid === fbUser.uid && state.uid === fbUser.uid) return;
+      bootingUid = fbUser.uid;
+
       state.authUser = fbUser;
       state.uid = fbUser.uid;
+
       try {
         const p = await ensureProfile(fbUser);
+
         if (p.disabled) {
-          toast("Account disabled");
-          return await logout();
+          toast("This account is disabled.");
+          await signOut(auth);
+          return;
         }
-        await update(ref(db, `users/${state.uid}`), { online: true, lastSeen: Date.now() });
+
+        // Presence is non-critical. Do not block login if this write is denied.
+        await update(ref(db, `users/${state.uid}`), {
+          online: true,
+          lastSeen: Date.now()
+        }).catch(err => console.warn("Presence update skipped:", err?.code || err));
+
         hide("login");
         hide("signup");
         show("app");
         setTheme();
         listenCore();
         nav(state.tab || "feed");
+        setLoginBusy(false);
         toast(`Welcome, ${p.name}! ⚡`);
       } catch (e) {
-        console.error(e);
-        toast("Could not load profile");
+        console.error("Application boot failed:", e);
+
+        // Important: a successful Firebase Auth login must not look like a
+        // password failure just because the profile/database is unavailable.
+        hide("login");
+        hide("signup");
+        show("app");
+        setLoginBusy(false);
+        setTheme();
+
+        // Use a minimal local profile until Database access is restored.
+        state.users[fbUser.uid] = normalizeUser({
+          id: fbUser.uid,
+          name: fbUser.displayName || "User",
+          handle: "@" + String(fbUser.email || fbUser.uid).split("@")[0].replace(/[^a-z0-9_]/gi, ""),
+          email: fbUser.email || "",
+          role: "user",
+          disabled: false
+        }, fbUser.uid);
+        renderHeader();
+        updateRoleUI();
+        toast("Signed in, but account data is temporarily unavailable. Check Firebase Database Rules.");
+      } finally {
+        bootingUid = null;
       }
     }
 
+    // Firebase is the only authentication authority. Never use localStorage
+    // or a custom token as a substitute for Firebase Auth.
     onAuthStateChanged(auth, async fbUser => {
-      if (fbUser) await bootApp(fbUser);
-      else {
+      if (fbUser) {
+        await bootApp(fbUser);
+      } else {
         cleanupListeners();
         state.uid = null;
         state.authUser = null;
+        state.users = {};
+        state.posts = {};
+        state.stories = {};
+        state.notifs = {};
+        state.messages = {};
+        state.chatUid = null;
+        bootingUid = null;
+        setLoginBusy(false);
         hide("app");
+        hide("signup");
         show("login");
       }
     });
