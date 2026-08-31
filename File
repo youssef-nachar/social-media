@@ -1,41 +1,30 @@
-{
-  "rules": {
-    "users": {
-      ".read": true,
-      "$uid": {
-        ".write": true,
-        ".validate": "newData.hasChildren(['name', 'handle'])"
-      }
-    },
-    "posts": {
-      ".read": true,
-      "$post_id": {
-        ".write": "data.exists() ? (data.child('userId').val() === newData.child('userId').val()) : true",
-        ".validate": "newData.hasChildren(['userId', 'content', 'timestamp']) && newData.child('content').val().length <= 2000"
-      }
-    },
-    "stories": {
-      ".read": true,
-      "$story_id": {
-        ".write": true,
-        ".validate": "newData.hasChildren(['userId', 'bg'])"
-      }
-    },
-    "notifications": {
-      "$target_uid": {
-        ".read": true,
-        ".write": true
-      }
-    },
-    "messages": {
-      "$room_id": {
-        ".read": true,
-        ".write": true
-      }
-    },
-    "typingStatus": {
-      ".read": true,
-      ".write": true
-    }
+"users": {
+  ".read": "auth != null",
+
+  "$uid": {
+    ".read": "auth != null",
+
+    ".write": "auth != null && (
+      (
+        auth.uid === $uid &&
+        (
+          !data.exists() ||
+          (
+            newData.child('role').val() === data.child('role').val() &&
+            newData.child('disabled').val() === data.child('disabled').val()
+          )
+        )
+      ) ||
+      root.child('users').child(auth.uid).child('role').val() === 'admin'
+    )",
+
+    ".validate": "!newData.exists() || (
+      newData.hasChildren(['name', 'handle']) &&
+      newData.child('name').isString() &&
+      newData.child('name').val().length >= 1 &&
+      newData.child('name').val().length <= 60 &&
+      newData.child('handle').isString() &&
+      newData.child('handle').val().matches(/^@[a-z0-9_]{3,30}$/)
+    )"
   }
 }
