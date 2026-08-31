@@ -1,0 +1,41 @@
+{
+  "rules": {
+    "users": {
+      ".read": true,
+      "$uid": {
+        ".write": true,
+        ".validate": "newData.hasChildren(['name', 'handle'])"
+      }
+    },
+    "posts": {
+      ".read": true,
+      "$post_id": {
+        ".write": "data.exists() ? (data.child('userId').val() === newData.child('userId').val()) : true",
+        ".validate": "newData.hasChildren(['userId', 'content', 'timestamp']) && newData.child('content').val().length <= 2000"
+      }
+    },
+    "stories": {
+      ".read": true,
+      "$story_id": {
+        ".write": true,
+        ".validate": "newData.hasChildren(['userId', 'bg'])"
+      }
+    },
+    "notifications": {
+      "$target_uid": {
+        ".read": true,
+        ".write": true
+      }
+    },
+    "messages": {
+      "$room_id": {
+        ".read": true,
+        ".write": true
+      }
+    },
+    "typingStatus": {
+      ".read": true,
+      ".write": true
+    }
+  }
+}
