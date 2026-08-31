@@ -1941,35 +1941,75 @@ async function signup(e) {
       </article>`;
     }
 
-    // Event Delegation for Feed Interactions
-    document.addEventListener("click", e => {
-      const target = e.target.closest("[data-like], [data-comment], [data-save], [data-share], [data-delete], [data-mod-delete], [data-profile]");
+    // Global delegation for every dynamically-rendered interactive element.
+    // This is important because posts/comments/users are re-rendered with innerHTML.
+    document.addEventListener("click", async e => {
+      const target = e.target.closest(
+        "[data-like], [data-comment], [data-save], [data-share], [data-delete], " +
+        "[data-mod-delete], [data-profile], [data-like-comment], [data-toggle-follow], " +
+        "[data-chat-user], [data-story], [data-tag]"
+      );
       if (!target) return;
 
-      if (target.dataset.like) react(target.dataset.like, "❤️");
-      if (target.dataset.comment) comments(target.dataset.comment);
-      if (target.dataset.save) savePost(target.dataset.save);
-      if (target.dataset.share) sharePost(target.dataset.share);
-      if (target.dataset.delete) deletePost(target.dataset.delete);
-      if (target.dataset.modDelete) moderateDeletePost(target.dataset.modDelete);
-      if (target.dataset.profile) profileModal(target.dataset.profile);
+      try {
+        if (target.dataset.like) return await react(target.dataset.like, "❤️");
+        if (target.dataset.comment) return comments(target.dataset.comment);
+        if (target.dataset.save) return await savePost(target.dataset.save);
+        if (target.dataset.share) return await sharePost(target.dataset.share);
+        if (target.dataset.delete) return await deletePost(target.dataset.delete);
+        if (target.dataset.modDelete) return await moderateDeletePost(target.dataset.modDelete);
+        if (target.dataset.profile) return profileModal(target.dataset.profile);
+        if (target.dataset.likeComment) return await commentLike(state.commentPost, target.dataset.likeComment);
+        if (target.dataset.toggleFollow) return await toggleFollow(target.dataset.toggleFollow);
+        if (target.dataset.chatUser) return await selectChat(target.dataset.chatUser);
+        if (target.dataset.story) return viewStory(target.dataset.story);
+        if (target.dataset.tag) return searchTag(target.dataset.tag);
+        if (target.id === "addStoryBtn") return addStory();
+      } catch (err) {
+        console.error("Interaction failed:", err);
+        toast("Action failed. Check your Firebase Database Rules.");
+      }
     });
 
     document.addEventListener("dblclick", e => {
       const target = e.target.closest("[data-doublelike]");
-      if (target) doubleLike(target.dataset.doublelike);
+      if (target) doubleLike(target.dataset.doublelike).catch(err => {
+        console.error("Double-like failed:", err);
+        toast("Like failed. Check Firebase Database Rules.");
+      });
     });
 
     // 6. Post Actions
     async function react(id, emoji) {
       const p = state.posts[id], u = current();
-      if (!p || !u) return;
+      if (!p || !u || !state.uid) return;
+
       const path = `posts/${id}/reactions/${state.uid}`;
-      if (p.reactions?.[state.uid]) {
-        await remove(ref(db, path));
-      } else {
-        await set(ref(db, path), emoji);
-        await addNotif(p.userId, `❤️ ${u.name} reacted to your post.`);
+      const wasLiked = !!p.reactions?.[state.uid];
+
+      // Optimistic UI: update local state immediately so Like never appears "dead".
+      p.reactions = { ...(p.reactions || {}) };
+      if (wasLiked) delete p.reactions[state.uid];
+      else p.reactions[state.uid] = emoji;
+
+      renderPosts();
+      if (state.tab === "saved") renderSaved();
+      if (state.tab === "profile") renderProfile();
+
+      try {
+        if (wasLiked) {
+          await remove(ref(db, path));
+        } else {
+          await set(ref(db, path), emoji);
+          await addNotif(p.userId, `❤️ ${u.name} reacted to your post.`);
+        }
+      } catch (err) {
+        // Roll back if Firebase rejects the write.
+        if (wasLiked) p.reactions[state.uid] = emoji;
+        else delete p.reactions[state.uid];
+        renderPosts();
+        console.error("Like write failed:", err);
+        toast("Like failed. Check Firebase Database Rules.");
       }
     }
 
@@ -1986,13 +2026,29 @@ async function signup(e) {
     async function savePost(id) {
       const p = state.posts[id];
       if (!p || !state.uid) return;
+
       const path = `posts/${id}/saved/${state.uid}`;
-      if (p.saved?.[state.uid]) {
-        await remove(ref(db, path));
-      } else {
-        await set(ref(db, path), true);
-      }
+      const wasSaved = !!p.saved?.[state.uid];
+
+      // Optimistic UI.
+      p.saved = { ...(p.saved || {}) };
+      if (wasSaved) delete p.saved[state.uid];
+      else p.saved[state.uid] = true;
+
+      renderPosts();
       renderSaved();
+
+      try {
+        if (wasSaved) await remove(ref(db, path));
+        else await set(ref(db, path), true);
+      } catch (err) {
+        if (wasSaved) p.saved[state.uid] = true;
+        else delete p.saved[state.uid];
+        renderPosts();
+        renderSaved();
+        console.error("Save write failed:", err);
+        toast("Save failed. Check Firebase Database Rules.");
+      }
     }
 
     async function deletePost(id) {
@@ -2004,6 +2060,7 @@ async function signup(e) {
         toast("Post removed");
       } catch (e) {
         console.error(e);
+        toast("Could not delete post. Check Firebase Database Rules.");
       }
     }
 
@@ -2016,6 +2073,7 @@ async function signup(e) {
         renderAdmin();
       } catch (e) {
         console.error(e);
+        toast("Could not moderate post. Check Firebase Database Rules.");
       }
     }
 
@@ -2085,7 +2143,7 @@ async function signup(e) {
       if ($("stories")) {
         $("stories").innerHTML = `<div class="story add" id="addStoryBtn"><span>➕<br>Add Story</span></div>` +
           active.map(s => `<div class="story" style="background-image:url('${esc(s.bg)}')" data-story="${esc(s.id)}"><span>${esc(s.user || "Story")}</span></div>`).join("");
-        $("addStoryBtn")?.addEventListener("click", addStory);
+        // Add Story uses a stable id; its listener is bound once in init.
         document.querySelectorAll("[data-story]").forEach(el => el.addEventListener("click", () => viewStory(el.dataset.story)));
       }
     }
@@ -2142,29 +2200,66 @@ async function signup(e) {
             </div>
           </div>`).join("") : `<div class="empty">No comments yet.</div>`;
 
-        document.querySelectorAll("[data-like-comment]").forEach(el => {
-          el.addEventListener("click", () => commentLike(state.commentPost, el.dataset.likeComment));
-        });
       }
     }
 
     async function sendComment() {
       const p = state.posts[state.commentPost], text = $("commentInput")?.value.trim(), u = current();
-      if (!p || !text || !u) return;
+      if (!p || !text || !u || !state.uid) return;
+      if (text.length > 1000) return toast("Comment is too long.");
+
       const r = push(ref(db, `posts/${p.id}/comments`));
-      await set(r, { id: r.key, userId: u.id, text, timestamp: Date.now(), likes: {} });
+      const comment = {
+        id: r.key,
+        userId: u.id,
+        text,
+        timestamp: Date.now(),
+        likes: {}
+      };
+
+      // Optimistic UI.
+      p.comments = { ...(p.comments || {}), [r.key]: comment };
       if ($("commentInput")) $("commentInput").value = "";
-      await addNotif(p.userId, `💬 ${u.name} commented on your post.`);
       renderComments();
+      renderPosts();
+
+      try {
+        await set(r, comment);
+        await addNotif(p.userId, `💬 ${u.name} commented on your post.`);
+      } catch (err) {
+        delete p.comments[r.key];
+        renderComments();
+        renderPosts();
+        console.error("Comment write failed:", err);
+        toast("Comment failed. Check Firebase Database Rules.");
+      }
     }
 
     async function commentLike(pid, cid) {
       const c = state.posts[pid]?.comments?.[cid];
-      if (!c) return;
+      if (!c || !state.uid) return;
+
       const path = `posts/${pid}/comments/${cid}/likes/${state.uid}`;
-      if (c.likes?.[state.uid]) await remove(ref(db, path));
-      else await set(ref(db, path), true);
+      const wasLiked = !!c.likes?.[state.uid];
+
+      c.likes = { ...(c.likes || {}) };
+      if (wasLiked) delete c.likes[state.uid];
+      else c.likes[state.uid] = true;
+
       renderComments();
+      renderPosts();
+
+      try {
+        if (wasLiked) await remove(ref(db, path));
+        else await set(ref(db, path), true);
+      } catch (err) {
+        if (wasLiked) c.likes[state.uid] = true;
+        else delete c.likes[state.uid];
+        renderComments();
+        renderPosts();
+        console.error("Comment like failed:", err);
+        toast("Comment Like failed. Check Firebase Database Rules.");
+      }
     }
 
     // 8. Profiles & Social
@@ -2191,12 +2286,48 @@ async function signup(e) {
     async function toggleFollow(id) {
       const me = current(), target = state.users[id];
       if (!me || !target || id === me.id) return;
+
       const following = !!me.following?.[id];
+
+      // Optimistic local state so Follow/Following changes immediately.
+      me.following = { ...(me.following || {}) };
+      target.followers = { ...(target.followers || {}) };
+
+      if (following) {
+        delete me.following[id];
+        delete target.followers[me.id];
+      } else {
+        me.following[id] = true;
+        target.followers[me.id] = true;
+      }
+
+      renderPeople();
+      renderProfile();
+      renderHeader();
+      if ($("modal")?.classList.contains("show")) profileModal(id);
+
       const patch = {};
       patch[`users/${me.id}/following/${id}`] = following ? null : true;
       patch[`users/${id}/followers/${me.id}`] = following ? null : true;
-      await update(ref(db), patch);
-      if (!following) await addNotif(id, `👤 ${me.name} followed you.`);
+
+      try {
+        await update(ref(db), patch);
+        if (!following) await addNotif(id, `👤 ${me.name} followed you.`);
+      } catch (err) {
+        // Roll back on permission/network failure.
+        if (following) {
+          me.following[id] = true;
+          target.followers[me.id] = true;
+        } else {
+          delete me.following[id];
+          delete target.followers[me.id];
+        }
+        renderPeople();
+        renderProfile();
+        renderHeader();
+        console.error("Follow write failed:", err);
+        toast("Follow failed. Check Firebase Database Rules.");
+      }
     }
 
     function renderPeople() {
@@ -2215,9 +2346,6 @@ async function signup(e) {
             ${u.id !== me.id ? `<button class="btn ${me.following?.[u.id] ? "secondary" : "primary"}" data-toggle-follow="${esc(u.id)}">${me.following?.[u.id] ? "Following" : "Follow"}</button>` : ""}
           </div>`).join("") || `<div class="card empty">No members found.</div>`;
 
-        document.querySelectorAll("[data-toggle-follow]").forEach(el => {
-          el.addEventListener("click", () => toggleFollow(el.dataset.toggleFollow));
-        });
       }
     }
 
@@ -2243,8 +2371,8 @@ async function signup(e) {
           </div>
         </div>`);
 
-      $("modalFollowBtn")?.addEventListener("click", () => {
-        toggleFollow(id);
+      $("modalFollowBtn")?.addEventListener("click", async () => {
+        await toggleFollow(id);
         profileModal(id);
       });
     }
@@ -2284,7 +2412,6 @@ async function signup(e) {
       if ($("trending")) {
         $("trending").innerHTML = (top.length ? top : [["#Technology", 0], ["#haberNeo", 0], ["#WebDev", 0], ["#AI", 0]])
           .map(([t, n]) => `<span class="tag" data-tag="${esc(t)}">${esc(t)} ${n ? `<small class="muted">(${n})</small>` : ""}</span>`).join("");
-        document.querySelectorAll("[data-tag]").forEach(el => el.addEventListener("click", () => searchTag(el.dataset.tag)));
       }
       if ($("networkSummary")) {
         $("networkSummary").innerHTML = `${Object.keys(state.users).length} members<br>${Object.values(state.posts).filter(p => !p.deleted).length} loaded posts<br>${Object.values(state.stories).filter(s => !s.expiresAt || s.expiresAt > Date.now()).length} active stories`;
@@ -2312,9 +2439,6 @@ async function signup(e) {
             </div>
           </div>`).join("") || `<div class="empty">No contacts</div>`;
 
-        document.querySelectorAll("[data-chat-user]").forEach(el => {
-          el.addEventListener("click", () => selectChat(el.dataset.chatUser));
-        });
       }
     }
 
@@ -2408,12 +2532,26 @@ async function signup(e) {
       const text = $("chatInput")?.value.trim(), me = current();
       if (!text || !me || !state.chatUid || text.length > 2000) return;
       if (state.users[state.chatUid]?.disabled) return toast("This account is unavailable");
-      const key = await ensureChat(me.id, state.chatUid);
-      const r = push(ref(db, `messages/${key}`));
-      await set(r, { id: r.key, senderId: me.id, receiverId: state.chatUid, text, timestamp: Date.now(), read: false });
-      if ($("chatInput")) $("chatInput").value = "";
-      await remove(ref(db, `typing/${me.id}/${state.chatUid}`));
-      await addNotif(state.chatUid, `💬 New message from ${me.name}.`);
+
+      try {
+        const key = await ensureChat(me.id, state.chatUid);
+        const r = push(ref(db, `messages/${key}`));
+        const msg = {
+          id: r.key,
+          senderId: me.id,
+          receiverId: state.chatUid,
+          text,
+          timestamp: Date.now(),
+          read: false
+        };
+        await set(r, msg);
+        if ($("chatInput")) $("chatInput").value = "";
+        await remove(ref(db, `typing/${me.id}/${state.chatUid}`));
+        await addNotif(state.chatUid, `💬 New message from ${me.name}.`);
+      } catch (err) {
+        console.error("Message send failed:", err);
+        toast("Message failed. Check Firebase Database Rules.");
+      }
     }
 
     let typingTimer;
@@ -2542,13 +2680,23 @@ async function signup(e) {
       // Chat Input
       $("sendBtn")?.addEventListener("click", sendMessage);
       $("chatInput")?.addEventListener("input", handleTyping);
-      $("chatInput")?.addEventListener("keydown", e => { if (e.key === "Enter") sendMessage(); });
+      $("chatInput")?.addEventListener("keydown", e => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          sendMessage();
+        }
+      });
       $("chatSearch")?.addEventListener("input", renderChatUsers);
       $("chatBack")?.addEventListener("click", () => $("chat")?.classList.remove("mobile-room"));
 
       // Comments Input
       $("commentSend")?.addEventListener("click", sendComment);
-      $("commentInput")?.addEventListener("keydown", e => { if (e.key === "Enter") sendComment(); });
+      $("commentInput")?.addEventListener("keydown", e => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          sendComment();
+        }
+      });
 
       // User Directory Tabs
       document.querySelectorAll("[data-user-tab]").forEach(btn => {
@@ -2578,7 +2726,26 @@ async function signup(e) {
 
       // Modals
       $("modalClose")?.addEventListener("click", () => closeModal("modal"));
-      $("commentsClose")?.addEventListener("click", () => closeModal("commentsModal"));
+      $("commentsClose")?.addEventListener("click", () => {
+        closeModal("commentsModal");
+        state.commentPost = null;
+        if ($("commentInput")) $("commentInput").value = "";
+      });
+
+      // Modal usability
+      $("modal")?.addEventListener("click", e => {
+        if (e.target === $("modal")) closeModal("modal");
+      });
+      $("commentsModal")?.addEventListener("click", e => {
+        if (e.target === $("commentsModal")) closeModal("commentsModal");
+      });
+      document.addEventListener("keydown", e => {
+        if (e.key === "Escape") {
+          closeModal("modal");
+          closeModal("commentsModal");
+          $("notifMenu")?.classList.remove("show");
+        }
+      });
 
       // Account Options
       $("editProfileBtn")?.addEventListener("click", editProfile);
