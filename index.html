@@ -778,6 +778,13 @@
       display: none
     }
 
+
+    .presence-dot {
+      display:inline-block; width:8px; height:8px; border-radius:50%;
+      background:var(--sub); margin-right:5px; box-shadow:0 0 0 2px var(--card);
+    }
+    .presence-dot.online { background:var(--green); box-shadow:0 0 10px rgba(16,185,129,.7); }
+
     .empty {
       text-align: center;
       padding: 25px;
@@ -1181,7 +1188,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
     import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile as updateAuthProfile, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-    import { getDatabase, ref, set, get, push, update, remove, onValue, query, orderByChild, limitToLast, endAt } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
+    import { getDatabase, ref, set, get, push, update, remove, onValue, query, orderByChild, limitToLast, endAt, onDisconnect, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
     import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-storage.js";
 
     // 1. Firebase Configuration
@@ -1189,6 +1196,7 @@
       apiKey: "AIzaSyDYKYertwdu_g0dRYBFigwbH8SbJM9VwLE",
       authDomain: "social-media-9fb3f.firebaseapp.com",
       projectId: "social-media-9fb3f",
+      databaseURL: "https://social-media-9fb3f-default-rtdb.firebaseio.com",
       storageBucket: "social-media-9fb3f.firebasestorage.app",
       messagingSenderId: "323467276507",
       appId: "1:323467276507:web:03ec2e15c2846574919cfe",
@@ -1234,7 +1242,8 @@
     const uidKey = (a, b) => a < b ? `${a}_${b}` : `${b}_${a}`;
     const fmtTime = ts => {
       if (!ts) return "";
-      const d = new Date(ts), n = new Date();
+      const numeric = typeof ts === "number" ? ts : (typeof ts === "object" && ts?.timestamp ? ts.timestamp : Number(ts));
+      const d = new Date(numeric || ts), n = new Date();
       if (d.toDateString() === n.toDateString()) return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
       return d.toLocaleDateString();
     };
@@ -1730,11 +1739,24 @@ async function signup(e) {
 
     function watchConnection() {
       const connectedRef = ref(db, ".info/connected");
-      state.unsub.push(onValue(connectedRef, s => {
-        const ok = s.val() === true, el = $("firebaseStatus");
+      state.unsub.push(onValue(connectedRef, async s => {
+        const connected = s.val() === true;
+        const el = $("firebaseStatus");
         if (el) {
-          el.textContent = ok ? "● Firebase Online" : "● Firebase Offline";
-          el.style.color = ok ? "var(--green)" : "var(--red)";
+          el.textContent = connected ? "● Firebase Online" : "● Firebase Offline";
+          el.style.color = connected ? "var(--green)" : "var(--red)";
+        }
+
+        if (!state.uid || !connected) return;
+
+        // Real presence: Firebase executes onDisconnect on the server when
+        // this browser/tab loses its connection, closes, or goes offline.
+        const userRef = ref(db, `users/${state.uid}`);
+        try {
+          await onDisconnect(userRef).update({ online: false, lastSeen: serverTimestamp() });
+          await update(userRef, { online: true, lastSeen: serverTimestamp() });
+        } catch (err) {
+          console.warn("Presence registration failed:", err?.code || err);
         }
       }));
     }
@@ -1756,11 +1778,7 @@ async function signup(e) {
           return;
         }
 
-        // Presence is non-critical. Do not block login if this write is denied.
-        await update(ref(db, `users/${state.uid}`), {
-          online: true,
-          lastSeen: Date.now()
-        }).catch(err => console.warn("Presence update skipped:", err?.code || err));
+        // Real-time presence is registered by watchConnection() using onDisconnect.
 
         hide("login");
         hide("signup");
@@ -2341,7 +2359,7 @@ async function signup(e) {
           <div class="card person">
             <div class="person-main" data-profile="${esc(u.id)}">
               ${avatarHTML(u, "sm")}
-              <div><b>${esc(u.name)}</b><div class="small muted">${esc(u.handle)} · ${u.online ? "Online" : "Offline"}</div></div>
+              <div><b>${esc(u.name)}</b><div class="small muted">${esc(u.handle)} · <span class="presence-dot ${u.online ? "online" : ""}"></span>${u.online ? "Online" : "Offline"}</div></div>
             </div>
             ${u.id !== me.id ? `<button class="btn ${me.following?.[u.id] ? "secondary" : "primary"}" data-toggle-follow="${esc(u.id)}">${me.following?.[u.id] ? "Following" : "Follow"}</button>` : ""}
           </div>`).join("") || `<div class="card empty">No members found.</div>`;
@@ -2435,7 +2453,7 @@ async function signup(e) {
             ${avatarHTML(u, "sm")}
             <div class="chat-info">
               <div class="chat-name">${esc(u.name)}</div>
-              <div class="chat-preview">${u.online ? "Online" : "Offline"}</div>
+              <div class="chat-preview"><span class="presence-dot ${u.online ? "online" : ""}"></span>${u.online ? "Online" : "Offline"}</div>
             </div>
           </div>`).join("") || `<div class="empty">No contacts</div>`;
 
@@ -2483,7 +2501,8 @@ async function signup(e) {
         state.messageCursor = arr[0]?.timestamp || null;
         renderMessages();
         const live = onValue(q, s2 => {
-          state.messages[key] = s2.val() || {};
+          const liveData = s2.val() || {};
+          state.messages[key] = { ...(state.messages[key] || {}), ...liveData };
           renderMessages();
         });
         state.chatUnsub.push(live);
@@ -2522,7 +2541,8 @@ async function signup(e) {
               <div class="bubble ${m.senderId === me.id ? "me" : "other"}">${esc(m.text)}</div>
               <span class="msg-time">${esc(fmtTime(m.timestamp))}</span>
             </div>`).join("") : `<div class="empty">Say hi to start the conversation 👋</div>`);
-        $("messagesList").scrollTop = $("messagesList").scrollHeight;
+        const list = $("messagesList");
+        if (list) list.scrollTop = list.scrollHeight;
         $("loadMoreMsgsBtn")?.addEventListener("click", loadMoreMessages);
       }
       updateChatStatus();
@@ -2545,12 +2565,18 @@ async function signup(e) {
           read: false
         };
         await set(r, msg);
+        // Best-effort conversation metadata. A restrictive rule here must never block the message.
+        set(ref(db, `chats/${key}/members`), { [me.id]: true, [state.chatUid]: true }).catch(() => {});
         if ($("chatInput")) $("chatInput").value = "";
         await remove(ref(db, `typing/${me.id}/${state.chatUid}`));
         await addNotif(state.chatUid, `💬 New message from ${me.name}.`);
       } catch (err) {
         console.error("Message send failed:", err);
-        toast("Message failed. Check Firebase Database Rules.");
+        const code = err?.code || "unknown";
+        const detail = code === "PERMISSION_DENIED" || code === "permission-denied"
+          ? "Firebase رفض إرسال الرسالة: صلاحيات Realtime Database تمنع الكتابة على messages."
+          : `فشل إرسال الرسالة (${code}). افتح Console لرؤية التفاصيل.`;
+        toast(detail);
       }
     }
 
