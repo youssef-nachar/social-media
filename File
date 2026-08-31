@@ -19,6 +19,7 @@
 
     "posts": {
       ".read": "auth != null",
+      ".indexOn": ["timestamp"],
       "$postId": {
         ".write": "auth != null"
       }
