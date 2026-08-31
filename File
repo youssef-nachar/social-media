@@ -53,11 +53,10 @@
       }
     },
 
-    "messages": {
-      "$chatId": {
-        ".read": "auth != null",
-        ".write": "auth != null"
-      }
-    }
+"messages": {
+  "$conversationId": {
+    ".indexOn": ["timestamp"]
+  }
+}
   }
 }
