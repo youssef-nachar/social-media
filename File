@@ -1,118 +1,61 @@
 {
   "rules": {
-    ".read": false,
-    ".write": false,
+    ".read": "auth != null",
+    ".write": "auth != null",
 
     "users": {
-      ".read": "auth != null",
-
       "$uid": {
         ".read": "auth != null",
-
-        ".write": "auth != null && (
-          (auth.uid === $uid && (
-            !data.exists() ||
-            (
-              newData.child('role').val() === data.child('role').val() &&
-              newData.child('disabled').val() === data.child('disabled').val()
-            )
-          )) ||
-          root.child('users').child(auth.uid).child('role').val() === 'admin'
-        )",
-
-        ".validate": "!newData.exists() || (
-          newData.hasChildren(['name', 'handle']) &&
-          newData.child('name').isString() &&
-          newData.child('name').val().length >= 1 &&
-          newData.child('name').val().length <= 60 &&
-          newData.child('handle').isString() &&
-          newData.child('handle').val().length >= 4 &&
-          newData.child('handle').val().length <= 31
-        )"
+        ".write": "auth.uid === $uid || root.child('users').child(auth.uid).child('role').val() === 'admin'"
       }
     },
 
     "userHandles": {
-      ".read": "auth != null",
-
       "$handle": {
-        ".write": "auth != null && (
-          (!data.exists() && newData.val() === auth.uid) ||
-          (data.val() === auth.uid && newData.val() === auth.uid)
-        )",
-
-        ".validate": "newData.isString() && newData.val() === auth.uid"
-      }
-    },
-
-    "posts": {
-      ".read": "auth != null",
-
-      "$post_id": {
-        ".write": "auth != null && (
-          !data.exists() ||
-          data.child('userId').val() === auth.uid ||
-          root.child('users').child(auth.uid).child('role').val() === 'admin'
-        )",
-
-        ".validate": "!newData.exists() || (
-          newData.hasChildren(['userId', 'content', 'timestamp']) &&
-          newData.child('userId').val() === auth.uid &&
-          newData.child('content').isString() &&
-          newData.child('content').val().length <= 2000 &&
-          newData.child('timestamp').isNumber()
-        )"
-      }
-    },
-
-    "stories": {
-      ".read": "auth != null",
-
-      "$story_id": {
-        ".write": "auth != null && (
-          !data.exists() ||
-          data.child('userId').val() === auth.uid ||
-          root.child('users').child(auth.uid).child('role').val() === 'admin'
-        )",
-
-        ".validate": "!newData.exists() || (
-          newData.hasChildren(['userId', 'bg']) &&
-          newData.child('userId').val() === auth.uid
-        )"
-      }
-    },
-
-    "notifications": {
-      "$target_uid": {
-        ".read": "auth != null && auth.uid === $target_uid",
-
-        "$notification_id": {
-          ".write": "auth != null && (
-            auth.uid === $target_uid ||
-            root.child('users').child(auth.uid).child('role').val() === 'admin'
-          )"
-        }
-      }
-    },
-
-    "messages": {
-      "$room_id": {
         ".read": "auth != null",
         ".write": "auth != null"
       }
     },
 
-    "typingStatus": {
+    "posts": {
+      ".read": "auth != null",
+      "$postId": {
+        ".write": "auth != null"
+      }
+    },
+
+    "stories": {
+      ".read": "auth != null",
+      "$storyId": {
+        ".write": "auth != null"
+      }
+    },
+
+    "notifications": {
       "$uid": {
-        ".read": "auth != null",
-        ".write": "auth != null && auth.uid === $uid"
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null"
       }
     },
 
     "typing": {
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
-        ".write": "auth != null && auth.uid === $uid"
+        ".write": "auth != null"
+      }
+    },
+
+    "chats": {
+      "$chatId": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+
+    "messages": {
+      "$chatId": {
+        ".read": "auth != null",
+        ".write": "auth != null"
       }
     }
   }
